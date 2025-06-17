@@ -1,0 +1,18 @@
+[project]
+name = "pypet"
+version = "0.1.0"
+description = "A command-line snippet manager inspired by pet"
+authors = []
+dependencies = [
+    "click>=8.1.7",
+    "rich>=13.7.0",
+    "toml>=0.10.2",
+]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+pypet = "pypet.cli:main"
