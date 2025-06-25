@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import toml
 
-from .models import Snippet
+from .models import Snippet, Parameter
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "pypet" / "snippets.toml"
 
@@ -47,8 +47,16 @@ class Storage:
         command: str,
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        parameters: Optional[Dict[str, Parameter]] = None,
     ) -> str:
-        """Add a new snippet and return its ID."""
+        """Add a new snippet and return its ID.
+
+        Args:
+            command: The command template with optional parameter placeholders
+            description: Optional description of what the command does
+            tags: Optional list of tags for organization
+            parameters: Optional dictionary of Parameter objects for customization
+        """
         snippets = self._load_snippets()
 
         # Generate a unique ID (timestamp + microseconds)
@@ -56,7 +64,12 @@ class Storage:
         snippet_id = now.strftime("%Y%m%d%H%M%S%f")
 
         # Create and store new snippet
-        snippet = Snippet(command=command, description=description, tags=tags or [])
+        snippet = Snippet(
+            command=command,
+            description=description,
+            tags=tags or [],
+            parameters=parameters,
+        )
         snippets[snippet_id] = snippet.to_dict()
 
         self._save_snippets(snippets)
@@ -67,13 +80,7 @@ class Storage:
         snippets = self._load_snippets()
         if snippet_id not in snippets:
             return None
-
-        data = snippets[snippet_id]
-        return Snippet(
-            command=data["command"],
-            description=data.get("description"),
-            tags=data.get("tags", []),
-        )
+        return Snippet.from_dict(snippets[snippet_id])
 
     def list_snippets(self) -> List[tuple[str, Snippet]]:
         """List all snippets with their IDs."""
@@ -81,7 +88,7 @@ class Storage:
         return [(id_, Snippet.from_dict(data)) for id_, data in snippets.items()]
 
     def search_snippets(self, query: str) -> List[tuple[str, Snippet]]:
-        """Search snippets by command, description, or tags."""
+        """Search snippets by command, description, tags, or parameter names."""
         query = query.lower()
         results = []
 
@@ -89,7 +96,10 @@ class Storage:
             if (
                 query in snippet.command.lower()
                 or (snippet.description and query in snippet.description.lower())
-                or any(query in tag.lower() for tag in snippet.tags)
+                or (snippet.tags and any(query in tag.lower() for tag in snippet.tags))
+                or (snippet.parameters and any(query in param.name.lower() or
+                    (param.description and query in param.description.lower())
+                    for param in snippet.parameters.values()))
             ):
                 results.append((id_, snippet))
 
@@ -101,6 +111,7 @@ class Storage:
         command: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
+        parameters: Optional[Dict[str, Parameter]] = None,
     ) -> bool:
         """Update an existing snippet. Returns True if successful."""
         snippets = self._load_snippets()
@@ -114,6 +125,8 @@ class Storage:
             snippet.description = description
         if tags is not None:
             snippet.tags = tags
+        if parameters is not None:
+            snippet.parameters = parameters
         snippet.updated_at = datetime.now(timezone.utc)
 
         snippets[snippet_id] = snippet.to_dict()
