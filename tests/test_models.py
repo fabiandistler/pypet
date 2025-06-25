@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 import pytest
-from typing import List
 from pypet.models import Snippet
 
 

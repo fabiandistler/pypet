@@ -3,7 +3,6 @@
 from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
-from rich.console import Console
 
 from pypet.cli import main
 from pypet.storage import Storage
@@ -51,9 +50,11 @@ def test_exec_with_id(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]  # Get ID of first snippet
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Confirm.ask", return_value=True
-    ), patch("subprocess.run") as mock_run:
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Confirm.ask", return_value=True),
+        patch("subprocess.run") as mock_run,
+    ):
 
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
@@ -62,10 +63,12 @@ def test_exec_with_id(runner, mock_storage):
 
 def test_exec_interactive_selection(runner, mock_storage):
     """Test executing a snippet through interactive selection."""
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Prompt.ask", return_value="1"
-    ), patch("rich.prompt.Confirm.ask", return_value=True
-    ), patch("subprocess.run") as mock_run:
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", return_value="1"),
+        patch("rich.prompt.Confirm.ask", return_value=True),
+        patch("subprocess.run") as mock_run,
+    ):
 
         result = runner.invoke(main, ["exec"])
         assert result.exit_code == 0
@@ -77,10 +80,11 @@ def test_exec_with_edit(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "click.edit", return_value="ls -lah"
-    ), patch("subprocess.run") as mock_run, patch(
-        "rich.prompt.Confirm.ask", return_value=True
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("click.edit", return_value="ls -lah"),
+        patch("subprocess.run") as mock_run,
+        patch("rich.prompt.Confirm.ask", return_value=True),
     ):
 
         result = runner.invoke(main, ["exec", snippet_id, "-e"])
@@ -95,9 +99,11 @@ def test_exec_cancel(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Confirm.ask", return_value=False
-    ), patch("subprocess.run") as mock_run:
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Confirm.ask", return_value=False),
+        patch("subprocess.run") as mock_run,
+    ):
 
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
@@ -106,8 +112,9 @@ def test_exec_cancel(runner, mock_storage):
 
 def test_exec_interactive_invalid_choice(runner, mock_storage):
     """Test invalid input in interactive selection."""
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Prompt.ask", side_effect=["invalid", "q"]
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
     ):
 
         result = runner.invoke(main, ["exec"])
@@ -140,12 +147,19 @@ def test_edit_command(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with patch("pypet.cli.storage", mock_storage):
-        result = runner.invoke(main, [
-            "edit", snippet_id, 
-            "--command", "new command",
-            "--description", "new description",
-            "--tags", "tag1,tag2"
-        ])
+        result = runner.invoke(
+            main,
+            [
+                "edit",
+                snippet_id,
+                "--command",
+                "new command",
+                "--description",
+                "new description",
+                "--tags",
+                "tag1,tag2",
+            ],
+        )
         assert result.exit_code == 0
         assert "Successfully updated snippet" in result.output
 
@@ -183,9 +197,11 @@ def test_exec_special_characters(runner, mock_storage):
         tags=["test"],
     )
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Confirm.ask", return_value=True
-    ), patch("subprocess.run") as mock_run:
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Confirm.ask", return_value=True),
+        patch("subprocess.run") as mock_run,
+    ):
 
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
@@ -196,8 +212,9 @@ def test_exec_special_characters(runner, mock_storage):
 
 def test_exec_interactive_invalid_input(runner, mock_storage):
     """Test interactive exec with invalid selection."""
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Prompt.ask", side_effect=["invalid", "q"]
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
     ):
 
         result = runner.invoke(main, ["exec"])
@@ -218,9 +235,7 @@ def test_copy_command(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "pyperclip.copy"
-    ) as mock_copy:
+    with patch("pypet.cli.storage", mock_storage), patch("pyperclip.copy") as mock_copy:
 
         result = runner.invoke(main, ["copy", snippet_id])
         assert result.exit_code == 0
@@ -230,9 +245,11 @@ def test_copy_command(runner, mock_storage):
 
 def test_copy_interactive_selection(runner, mock_storage):
     """Test copying a snippet through interactive selection."""
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "rich.prompt.Prompt.ask", return_value="1"
-    ), patch("pyperclip.copy") as mock_copy:
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", return_value="1"),
+        patch("pyperclip.copy") as mock_copy,
+    ):
 
         result = runner.invoke(main, ["copy"])
         assert result.exit_code == 0
@@ -253,9 +270,7 @@ def test_exec_with_copy_option(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "pyperclip.copy"
-    ) as mock_copy:
+    with patch("pypet.cli.storage", mock_storage), patch("pyperclip.copy") as mock_copy:
 
         result = runner.invoke(main, ["exec", snippet_id, "--copy"])
         assert result.exit_code == 0
@@ -268,8 +283,9 @@ def test_copy_with_clipboard_error(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "pyperclip.copy", side_effect=Exception("Clipboard error")
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pyperclip.copy", side_effect=Exception("Clipboard error")),
     ):
 
         result = runner.invoke(main, ["copy", snippet_id])

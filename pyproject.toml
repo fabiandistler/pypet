@@ -56,6 +56,8 @@ packages = ["pypet"]
 
 [dependency-groups]
 dev = [
+    "black>=25.1.0",
+    "ruff>=0.12.0",
     "twine>=6.1.0",
 ]
 

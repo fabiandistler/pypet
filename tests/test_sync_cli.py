@@ -1,8 +1,6 @@
 """Test cases for sync CLI commands"""
 
-import tempfile
 import pytest
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
 
@@ -33,7 +31,7 @@ def test_sync_status_command(runner):
     assert "Git Available" in result.output
 
 
-@patch('pypet.sync.GIT_AVAILABLE', False)
+@patch("pypet.sync.GIT_AVAILABLE", False)
 def test_sync_init_no_git(runner):
     """Test sync init when Git is not available."""
     result = runner.invoke(main, ["sync", "init"])
@@ -41,30 +39,30 @@ def test_sync_init_no_git(runner):
     assert "Git is not available" in result.output
 
 
-@patch('pypet.sync.GIT_AVAILABLE', True)
-@patch('pypet.sync.Repo')
+@patch("pypet.sync.GIT_AVAILABLE", True)
+@patch("pypet.sync.Repo")
 def test_sync_init_success(mock_repo_class, runner):
     """Test successful sync init."""
     mock_repo = MagicMock()
     mock_repo_class.init.return_value = mock_repo
-    
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.git_available = True
         mock_sync_manager.is_git_repo = False
         mock_sync_manager.init_git_repo.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "init"])
         assert result.exit_code == 0
         assert "Git sync initialized successfully" in result.output
 
 
-@patch('pypet.sync.GIT_AVAILABLE', True)
+@patch("pypet.sync.GIT_AVAILABLE", True)
 def test_sync_init_already_initialized(runner):
     """Test sync init when already initialized."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.git_available = True
         mock_sync_manager.is_git_repo = True
-        
+
         result = runner.invoke(main, ["sync", "init"])
         assert result.exit_code == 0
         assert "already initialized" in result.output
@@ -72,9 +70,9 @@ def test_sync_init_already_initialized(runner):
 
 def test_sync_commit_command(runner):
     """Test sync commit command."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.commit_changes.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "commit", "-m", "test commit"])
         assert result.exit_code == 0
         assert "Changes committed successfully" in result.output
@@ -83,9 +81,9 @@ def test_sync_commit_command(runner):
 
 def test_sync_commit_failure(runner):
     """Test sync commit command failure."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.commit_changes.return_value = False
-        
+
         result = runner.invoke(main, ["sync", "commit"])
         assert result.exit_code == 1
         assert "Failed to commit changes" in result.output
@@ -93,9 +91,9 @@ def test_sync_commit_failure(runner):
 
 def test_sync_pull_command(runner):
     """Test sync pull command."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.pull_changes.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "pull"])
         assert result.exit_code == 0
         assert "Changes pulled successfully" in result.output
@@ -103,9 +101,9 @@ def test_sync_pull_command(runner):
 
 def test_sync_push_command(runner):
     """Test sync push command."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.push_changes.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "push"])
         assert result.exit_code == 0
         assert "Changes pushed successfully" in result.output
@@ -113,30 +111,34 @@ def test_sync_push_command(runner):
 
 def test_sync_sync_command(runner):
     """Test sync sync command (full sync)."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.sync.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "sync"])
         assert result.exit_code == 0
         assert "Full sync completed successfully" in result.output
-        mock_sync_manager.sync.assert_called_once_with(auto_commit=True, commit_message=None)
+        mock_sync_manager.sync.assert_called_once_with(
+            auto_commit=True, commit_message=None
+        )
 
 
 def test_sync_sync_no_commit(runner):
     """Test sync sync command with no-commit flag."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.sync.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "sync", "--no-commit"])
         assert result.exit_code == 0
-        mock_sync_manager.sync.assert_called_once_with(auto_commit=False, commit_message=None)
+        mock_sync_manager.sync.assert_called_once_with(
+            auto_commit=False, commit_message=None
+        )
 
 
 def test_sync_backups_empty(runner):
     """Test sync backups command when no backups exist."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.list_backups.return_value = []
-        
+
         result = runner.invoke(main, ["sync", "backups"])
         assert result.exit_code == 0
         assert "No backup files found" in result.output
@@ -148,10 +150,10 @@ def test_sync_backups_list(runner):
     mock_backup.name = "snippets_backup_20250101_120000.toml"
     mock_backup.stat.return_value.st_size = 1024
     mock_backup.stat.return_value.st_mtime = 1640995200  # 2022-01-01 12:00:00
-    
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.list_backups.return_value = [mock_backup]
-        
+
         result = runner.invoke(main, ["sync", "backups"])
         assert result.exit_code == 0
         assert "Available Backups" in result.output
@@ -160,9 +162,9 @@ def test_sync_backups_list(runner):
 
 def test_sync_restore_command(runner):
     """Test sync restore command."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.restore_backup.return_value = True
-        
+
         result = runner.invoke(main, ["sync", "restore", "test_backup.toml"])
         assert result.exit_code == 0
         assert "Successfully restored from test_backup.toml" in result.output
@@ -170,9 +172,9 @@ def test_sync_restore_command(runner):
 
 def test_sync_restore_failure(runner):
     """Test sync restore command failure."""
-    with patch('pypet.cli.sync_manager') as mock_sync_manager:
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
         mock_sync_manager.restore_backup.return_value = False
-        
+
         result = runner.invoke(main, ["sync", "restore", "nonexistent.toml"])
         assert result.exit_code == 1
         assert "Failed to restore from nonexistent.toml" in result.output

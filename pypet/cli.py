@@ -2,7 +2,7 @@
 Command-line interface for pypet
 """
 
-from typing import Dict, Optional, cast
+from typing import Dict, Optional
 from datetime import datetime
 import click
 import pyperclip
@@ -32,31 +32,31 @@ def _format_parameters(parameters: Optional[Dict[str, Parameter]]) -> str:
 
 def _parse_parameters(param_str: str) -> Dict[str, Parameter]:
     """Parse parameter string into Parameter objects.
-    
+
     Format: name[=default][:description],name[=default][:description],...
     Example: host=localhost:The host to connect to,port=8080:Port number
     """
     if not param_str:
         return {}
-    
+
     parameters = {}
     for param_def in param_str.split(","):
         if ":" in param_def:
             param_part, description = param_def.split(":", 1)
         else:
             param_part, description = param_def, None
-            
+
         if "=" in param_part:
             name, default = param_part.split("=", 1)
         else:
             name, default = param_part, None
-            
+
         parameters[name.strip()] = Parameter(
             name=name.strip(),
             default=default.strip() if default else None,
-            description=description.strip() if description else None
+            description=description.strip() if description else None,
         )
-    
+
     return parameters
 
 
@@ -64,7 +64,7 @@ def _prompt_for_parameters(snippet: Snippet) -> Dict[str, str]:
     """Prompt user for parameter values."""
     if not snippet.parameters:
         return {}
-    
+
     values = {}
     for name, param in snippet.parameters.items():
         prompt = f"{name}"
@@ -72,13 +72,13 @@ def _prompt_for_parameters(snippet: Snippet) -> Dict[str, str]:
             prompt += f" ({param.description})"
         if param.default:
             prompt += f" [{param.default}]"
-        
+
         value = Prompt.ask(prompt)
         if value:
             values[name] = value
         elif param.default:
             values[name] = param.default
-            
+
     return values
 
 
@@ -129,7 +129,7 @@ def new(
     """Create a new snippet."""
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
     parameters = _parse_parameters(params) if params else None
-    
+
     snippet_id = storage.add_snippet(
         command=command,
         description=description,
@@ -198,7 +198,7 @@ def edit(
 
     # Only split tags if they were provided
     tag_list = [t.strip() for t in tags.split(",")] if tags is not None else None
-    
+
     # Only parse parameters if they were provided
     parameters = _parse_parameters(params) if params is not None else None
 
@@ -230,7 +230,7 @@ def edit(
 
             console.print(table)
     else:
-        console.print(f"[red]Failed to update snippet[/red]")
+        console.print("[red]Failed to update snippet[/red]")
 
 
 @main.command()
@@ -248,7 +248,7 @@ def copy(
     """Copy a snippet to clipboard. If no snippet ID is provided, shows an interactive selection."""
     try:
         selected_snippet = None
-        
+
         if snippet_id is None:
             # Show interactive snippet selection
             snippets = storage.list_snippets()
@@ -281,7 +281,7 @@ def copy(
             while True:
                 try:
                     choice_str = Prompt.ask("Enter snippet number (or 'q' to quit)")
-                    if choice_str.lower() == 'q':
+                    if choice_str.lower() == "q":
                         return
                     choice = int(choice_str)
                     if 1 <= choice <= len(snippets):
@@ -314,7 +314,9 @@ def copy(
                 return
 
         # If not all parameters are provided via command line, prompt for them
-        if selected_snippet.parameters and len(param_values) < len(selected_snippet.parameters):
+        if selected_snippet.parameters and len(param_values) < len(
+            selected_snippet.parameters
+        ):
             interactive_values = _prompt_for_parameters(selected_snippet)
             param_values.update(interactive_values)
 
@@ -343,7 +345,9 @@ def copy(
     "--print-only", "-p", is_flag=True, help="Only print the command without executing"
 )
 @click.option("--edit", "-e", is_flag=True, help="Edit command before execution")
-@click.option("--copy", "-c", is_flag=True, help="Copy command to clipboard instead of executing")
+@click.option(
+    "--copy", "-c", is_flag=True, help="Copy command to clipboard instead of executing"
+)
 @click.option(
     "--param",
     "-P",
@@ -360,7 +364,7 @@ def exec(
     """Execute a saved snippet. If no snippet ID is provided, shows an interactive selection."""
     try:
         selected_snippet = None
-        
+
         if snippet_id is None:
             # Show interactive snippet selection
             snippets = storage.list_snippets()
@@ -393,7 +397,7 @@ def exec(
             while True:
                 try:
                     choice_str = Prompt.ask("Enter snippet number (or 'q' to quit)")
-                    if choice_str.lower() == 'q':
+                    if choice_str.lower() == "q":
                         return
                     choice = int(choice_str)
                     if 1 <= choice <= len(snippets):
@@ -426,7 +430,9 @@ def exec(
                 return
 
         # If not all parameters are provided via command line, prompt for them
-        if selected_snippet.parameters and len(param_values) < len(selected_snippet.parameters):
+        if selected_snippet.parameters and len(param_values) < len(
+            selected_snippet.parameters
+        ):
             interactive_values = _prompt_for_parameters(selected_snippet)
             param_values.update(interactive_values)
 
@@ -445,7 +451,9 @@ def exec(
                     return
             except click.ClickException:
                 # Fallback for non-interactive environments (like tests)
-                console.print("[yellow]Editor not available, using original command[/yellow]")
+                console.print(
+                    "[yellow]Editor not available, using original command[/yellow]"
+                )
 
         if print_only:
             console.print(final_command)
@@ -462,7 +470,7 @@ def exec(
             if not Confirm.ask("Execute this command?"):
                 console.print("[yellow]Command execution cancelled[/yellow]")
                 return
-            
+
             import subprocess
 
             try:
@@ -489,13 +497,15 @@ def sync():
 def init(remote: Optional[str] = None):
     """Initialize Git repository for snippet synchronization."""
     if not sync_manager.git_available:
-        console.print("[red]Git is not available. Please install Git to use sync features.[/red]")
+        console.print(
+            "[red]Git is not available. Please install Git to use sync features.[/red]"
+        )
         raise click.ClickException("Git not available")
-    
+
     if sync_manager.is_git_repo:
         console.print("[yellow]Git repository already initialized[/yellow]")
         return
-    
+
     if sync_manager.init_git_repo(remote):
         console.print("[green]Git sync initialized successfully[/green]")
         if remote:
@@ -508,15 +518,15 @@ def init(remote: Optional[str] = None):
 def status():
     """Show Git synchronization status."""
     status_info = sync_manager.get_status()
-    
+
     table = Table(title="Git Sync Status")
     table.add_column("Property", style="blue")
     table.add_column("Value", style="cyan")
-    
+
     for key, value in status_info.items():
         display_key = key.replace("_", " ").title()
         table.add_row(display_key, value)
-    
+
     console.print(table)
 
 
@@ -564,22 +574,22 @@ def sync_all(no_commit: bool = False, message: Optional[str] = None):
 def backups():
     """List available backup files."""
     backup_files = sync_manager.list_backups()
-    
+
     if not backup_files:
         console.print("[yellow]No backup files found[/yellow]")
         return
-    
+
     table = Table(title="Available Backups")
     table.add_column("File", style="blue")
     table.add_column("Size", style="green")
     table.add_column("Modified", style="yellow")
-    
+
     for backup in backup_files:
         stat = backup.stat()
         size = f"{stat.st_size} bytes"
         modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         table.add_row(backup.name, size, modified)
-    
+
     console.print(table)
 
 
@@ -588,7 +598,7 @@ def backups():
 def restore(backup_file: str):
     """Restore snippets from a backup file."""
     backup_path = sync_manager.config_dir / backup_file
-    
+
     if sync_manager.restore_backup(backup_path):
         console.print(f"[green]Successfully restored from {backup_file}[/green]")
     else:

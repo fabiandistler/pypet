@@ -39,7 +39,7 @@ class Storage:
         with open(self.config_path, "w", encoding="utf-8") as f:
             try:
                 toml.dump(snippets, f)
-            except Exception as e:
+            except Exception:
                 raise
 
     def add_snippet(
@@ -97,9 +97,14 @@ class Storage:
                 query in snippet.command.lower()
                 or (snippet.description and query in snippet.description.lower())
                 or (snippet.tags and any(query in tag.lower() for tag in snippet.tags))
-                or (snippet.parameters and any(query in param.name.lower() or
-                    (param.description and query in param.description.lower())
-                    for param in snippet.parameters.values()))
+                or (
+                    snippet.parameters
+                    and any(
+                        query in param.name.lower()
+                        or (param.description and query in param.description.lower())
+                        for param in snippet.parameters.values()
+                    )
+                )
             ):
                 results.append((id_, snippet))
 

@@ -585,6 +585,8 @@ dev = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "black" },
+    { name = "ruff" },
     { name = "twine" },
 ]
 
@@ -603,7 +605,11 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "twine", specifier = ">=6.1.0" }]
+dev = [
+    { name = "black", specifier = ">=25.1.0" },
+    { name = "ruff", specifier = ">=0.12.0" },
+    { name = "twine", specifier = ">=6.1.0" },
+]
 
 [[package]]
 name = "pytest"

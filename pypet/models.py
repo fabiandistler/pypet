@@ -81,11 +81,11 @@ class Snippet:
             "command": self.command,
             "description": self.description,
             "tags": self.tags or [],
-            "parameters": {
-                name: param.to_dict() for name, param in self.parameters.items()
-            }
-            if self.parameters
-            else {},
+            "parameters": (
+                {name: param.to_dict() for name, param in self.parameters.items()}
+                if self.parameters
+                else {}
+            ),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -121,21 +121,23 @@ class Snippet:
     def apply_parameters(self, params: Optional[Dict[str, str]] = None) -> str:
         """
         Apply parameter values to the command string.
-        
+
         If a parameter is not provided in params, its default value will be used.
         If a parameter has no default and is not provided, a ValueError is raised.
         """
         params = params or {}
         result = self.command
-        
+
         if self.parameters:
             for name, param in self.parameters.items():
                 value = params.get(name, param.default)
                 if value is None:
-                    raise ValueError(f"No value provided for required parameter: {name}")
-                
+                    raise ValueError(
+                        f"No value provided for required parameter: {name}"
+                    )
+
                 # Replace both ${name} and {name} patterns
                 result = result.replace(f"${{{name}}}", value)
                 result = result.replace(f"{{{name}}}", value)
-            
+
         return result

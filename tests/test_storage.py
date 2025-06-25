@@ -1,10 +1,8 @@
 """Test cases for the Storage system"""
 
 import sys
-from pathlib import Path
 import pytest
 from pypet.storage import Storage
-from pypet.models import Snippet
 
 
 @pytest.fixture
@@ -134,7 +132,9 @@ def test_search_case_sensitivity(temp_storage):
     # Case-insensitive search (default)
     assert len(temp_storage.search_snippets("git")) == 1
     assert len(temp_storage.search_snippets("docker")) == 1
-    assert len(temp_storage.search_snippets("STATUS")) == 1  # Matches only first description
+    assert (
+        len(temp_storage.search_snippets("STATUS")) == 1
+    )  # Matches only first description
 
 
 def test_search_special_characters(temp_storage):
