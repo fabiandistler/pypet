@@ -48,16 +48,24 @@ This is a Python CLI tool (`pypet`) for managing command-line snippets, inspired
    - Thread-safe file operations with error handling
 
 3. **CLI (`pypet/cli.py`)**: Click-based command interface with Rich formatting
-   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`
+   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`, `sync`
    - Interactive execution with parameter prompting
    - **Clipboard integration** using pyperclip library
+   - **Git synchronization** with backup/restore functionality
    - Rich terminal tables and colored output
+
+4. **Sync (`pypet/sync.py`)**: Git-based synchronization system
+   - Git repository detection and initialization
+   - Commit, pull, push operations with automatic backups
+   - Conflict-safe operations with backup/restore
+   - Cross-platform Git integration using GitPython
 
 ### Key Features
 
 - **Parameterized Snippets**: Commands can contain placeholders like `{port}` or `{env=development}`
 - **Interactive Execution**: `pypet exec` without ID shows snippet selection table
 - **Clipboard Integration**: `pypet copy` command and `--copy` option for easy snippet sharing
+- **Git Synchronization**: Full Git workflow with automatic backups and conflict resolution
 - **Rich Terminal Output**: All commands use Rich library for formatted tables and colors
 - **TOML Storage**: Human-readable configuration format at `~/.config/pypet/snippets.toml`
 - **Comprehensive Search**: Search across commands, descriptions, tags, and parameter names
@@ -68,6 +76,8 @@ Tests are organized by component:
 - `tests/test_models.py`: Model validation and serialization
 - `tests/test_storage.py`: File operations and persistence
 - `tests/test_cli.py`: Command-line interface using Click's testing utilities
+- `tests/test_sync.py`: Git synchronization functionality
+- `tests/test_sync_cli.py`: Sync command-line interface tests
 
 ### Parameter System
 

@@ -3,6 +3,7 @@ Command-line interface for pypet
 """
 
 from typing import Dict, Optional, cast
+from datetime import datetime
 import click
 import pyperclip
 from rich.console import Console
@@ -11,9 +12,11 @@ from rich.prompt import Prompt
 
 from .models import Parameter, Snippet
 from .storage import Storage
+from .sync import SyncManager
 
 console = Console()
 storage = Storage()
+sync_manager = SyncManager(storage.config_path)
 
 
 def _format_parameters(parameters: Optional[Dict[str, Parameter]]) -> str:
@@ -467,6 +470,123 @@ def exec(
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Operation cancelled[/yellow]")
+
+
+@main.group()
+def sync():
+    """Synchronize snippets with Git repositories."""
+    pass
+
+
+@sync.command()
+@click.option("--remote", "-r", help="Remote repository URL")
+def init(remote: Optional[str] = None):
+    """Initialize Git repository for snippet synchronization."""
+    if not sync_manager.git_available:
+        console.print("[red]Git is not available. Please install Git to use sync features.[/red]")
+        raise click.ClickException("Git not available")
+    
+    if sync_manager.is_git_repo:
+        console.print("[yellow]Git repository already initialized[/yellow]")
+        return
+    
+    if sync_manager.init_git_repo(remote):
+        console.print("[green]Git sync initialized successfully[/green]")
+        if remote:
+            console.print(f"[blue]Remote origin set to: {remote}[/blue]")
+    else:
+        raise click.ClickException("Failed to initialize Git repository")
+
+
+@sync.command()
+def status():
+    """Show Git synchronization status."""
+    status_info = sync_manager.get_status()
+    
+    table = Table(title="Git Sync Status")
+    table.add_column("Property", style="blue")
+    table.add_column("Value", style="cyan")
+    
+    for key, value in status_info.items():
+        display_key = key.replace("_", " ").title()
+        table.add_row(display_key, value)
+    
+    console.print(table)
+
+
+@sync.command()
+@click.option("--message", "-m", help="Commit message")
+def commit(message: Optional[str] = None):
+    """Commit current snippet changes to Git."""
+    if sync_manager.commit_changes(message):
+        console.print("[green]Changes committed successfully[/green]")
+    else:
+        raise click.ClickException("Failed to commit changes")
+
+
+@sync.command()
+def pull():
+    """Pull snippet changes from remote repository."""
+    if sync_manager.pull_changes():
+        console.print("[green]Changes pulled successfully[/green]")
+    else:
+        raise click.ClickException("Failed to pull changes")
+
+
+@sync.command()
+def push():
+    """Push snippet changes to remote repository."""
+    if sync_manager.push_changes():
+        console.print("[green]Changes pushed successfully[/green]")
+    else:
+        raise click.ClickException("Failed to push changes")
+
+
+@sync.command("sync")
+@click.option("--no-commit", is_flag=True, help="Skip auto-commit before sync")
+@click.option("--message", "-m", help="Commit message for auto-commit")
+def sync_all(no_commit: bool = False, message: Optional[str] = None):
+    """Perform full synchronization: commit, pull, and push."""
+    auto_commit = not no_commit
+    if sync_manager.sync(auto_commit=auto_commit, commit_message=message):
+        console.print("[green]Full sync completed successfully[/green]")
+    else:
+        raise click.ClickException("Sync completed with errors")
+
+
+@sync.command()
+def backups():
+    """List available backup files."""
+    backup_files = sync_manager.list_backups()
+    
+    if not backup_files:
+        console.print("[yellow]No backup files found[/yellow]")
+        return
+    
+    table = Table(title="Available Backups")
+    table.add_column("File", style="blue")
+    table.add_column("Size", style="green")
+    table.add_column("Modified", style="yellow")
+    
+    for backup in backup_files:
+        stat = backup.stat()
+        size = f"{stat.st_size} bytes"
+        modified = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        table.add_row(backup.name, size, modified)
+    
+    console.print(table)
+
+
+@sync.command()
+@click.argument("backup_file")
+def restore(backup_file: str):
+    """Restore snippets from a backup file."""
+    backup_path = sync_manager.config_dir / backup_file
+    
+    if sync_manager.restore_backup(backup_path):
+        console.print(f"[green]Successfully restored from {backup_file}[/green]")
+    else:
+        raise click.ClickException(f"Failed to restore from {backup_file}")
 
 
 if __name__ == "__main__":
