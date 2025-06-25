@@ -19,6 +19,18 @@ pytest tests/test_models.py
 pytest tests/test_models.py::test_snippet_initialization
 ```
 
+### Code Quality
+```bash
+# Format code with black (required before commit)
+uv run python -m black pypet tests
+
+# Check linting with ruff
+uv run python -m ruff check pypet tests
+
+# Both together
+uv run python -m black pypet tests && uv run python -m ruff check pypet tests
+```
+
 ### Project Management
 ```bash
 # Install dependencies using uv (preferred)
@@ -94,3 +106,19 @@ Parameters are defined with optional descriptions and are prompted for during in
 - Rich library for all terminal output formatting
 - Click framework for CLI with proper option/argument handling
 - UTC timestamps for all datetime operations
+
+## Recent Updates & Important Notes
+
+### v0.1.1 (2025-06-25) - Current Version
+- **Fixed Issue #10**: Git sync remote feature now works reliably
+- **Added `pypet sync remote <url>` command** for easy remote management
+- **Improved first-time sync**: Handles empty repositories automatically  
+- **Auto-upstream setup**: Sets branch tracking on first push
+- **Enhanced error handling**: Clear guidance for common sync issues
+- Updated to 74 total tests
+
+### Development Workflow Notes
+- **Always run linting before commits**: `black` and `ruff` are required
+- **Release process**: GitHub Actions handles PyPI publishing automatically on tag push
+- **Git sync feature**: Works with any Git service, handles edge cases robustly
+- **Testing**: All 74 tests must pass before any release
