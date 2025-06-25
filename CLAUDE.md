@@ -48,14 +48,16 @@ This is a Python CLI tool (`pypet`) for managing command-line snippets, inspired
    - Thread-safe file operations with error handling
 
 3. **CLI (`pypet/cli.py`)**: Click-based command interface with Rich formatting
-   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`
+   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`
    - Interactive execution with parameter prompting
+   - **Clipboard integration** using pyperclip library
    - Rich terminal tables and colored output
 
 ### Key Features
 
 - **Parameterized Snippets**: Commands can contain placeholders like `{port}` or `{env=development}`
 - **Interactive Execution**: `pypet exec` without ID shows snippet selection table
+- **Clipboard Integration**: `pypet copy` command and `--copy` option for easy snippet sharing
 - **Rich Terminal Output**: All commands use Rich library for formatted tables and colors
 - **TOML Storage**: Human-readable configuration format at `~/.config/pypet/snippets.toml`
 - **Comprehensive Search**: Search across commands, descriptions, tags, and parameter names

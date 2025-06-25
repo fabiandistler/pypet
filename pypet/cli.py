@@ -4,6 +4,7 @@ Command-line interface for pypet
 
 from typing import Dict, Optional, cast
 import click
+import pyperclip
 from rich.console import Console
 from rich.table import Table
 from rich.prompt import Prompt
@@ -232,9 +233,114 @@ def edit(
 @main.command()
 @click.argument("snippet_id", required=False)
 @click.option(
+    "--param",
+    "-P",
+    multiple=True,
+    help="Parameter values in name=value format. Can be specified multiple times.",
+)
+def copy(
+    snippet_id: Optional[str] = None,
+    param: tuple[str, ...] = (),
+):
+    """Copy a snippet to clipboard. If no snippet ID is provided, shows an interactive selection."""
+    try:
+        selected_snippet = None
+        
+        if snippet_id is None:
+            # Show interactive snippet selection
+            snippets = storage.list_snippets()
+            if not snippets:
+                console.print(
+                    "[yellow]No snippets found.[/yellow] Add some with 'pypet new'"
+                )
+                return
+
+            # Display snippets table for selection
+            table = Table(title="Available Snippets")
+            table.add_column("Index", style="blue")
+            table.add_column("ID", style="cyan")
+            table.add_column("Command", style="green")
+            table.add_column("Description", style="yellow")
+            table.add_column("Parameters", style="magenta")
+
+            for i, (id_, snippet) in enumerate(snippets, 1):
+                table.add_row(
+                    str(i),
+                    id_,
+                    snippet.command,
+                    snippet.description or "",
+                    _format_parameters(snippet.parameters),
+                )
+
+            console.print(table)
+
+            # Get user selection
+            while True:
+                try:
+                    choice_str = Prompt.ask("Enter snippet number (or 'q' to quit)")
+                    if choice_str.lower() == 'q':
+                        return
+                    choice = int(choice_str)
+                    if 1 <= choice <= len(snippets):
+                        selected_snippet = snippets[choice - 1][1]
+                        snippet_id = snippets[choice - 1][0]
+                        break
+                    console.print("[red]Invalid selection[/red]")
+                except (ValueError, EOFError):
+                    console.print("[red]Please enter a number[/red]")
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Operation cancelled[/yellow]")
+                    return
+        else:
+            # Get snippet by ID
+            selected_snippet = storage.get_snippet(snippet_id)
+            if not selected_snippet:
+                console.print(f"[red]Snippet not found:[/red] {snippet_id}")
+                raise click.ClickException(f"Snippet not found: {snippet_id}")
+
+        # Parse provided parameter values
+        param_values = {}
+        for p in param:
+            try:
+                name, value = p.split("=", 1)
+                param_values[name.strip()] = value.strip()
+            except ValueError:
+                console.print(
+                    f"[red]Invalid parameter format:[/red] {p}. Use name=value"
+                )
+                return
+
+        # If not all parameters are provided via command line, prompt for them
+        if selected_snippet.parameters and len(param_values) < len(selected_snippet.parameters):
+            interactive_values = _prompt_for_parameters(selected_snippet)
+            param_values.update(interactive_values)
+
+        # Apply parameters to get final command
+        try:
+            final_command = selected_snippet.apply_parameters(param_values)
+        except ValueError as e:
+            console.print(f"[red]Error:[/red] {str(e)}")
+            return
+
+        # Copy to clipboard
+        try:
+            pyperclip.copy(final_command)
+            console.print(f"[green]✓ Copied to clipboard:[/green] {final_command}")
+        except Exception as e:
+            console.print(f"[red]Failed to copy to clipboard:[/red] {str(e)}")
+            console.print(f"[yellow]Command:[/yellow] {final_command}")
+
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Operation cancelled[/yellow]")
+
+
+@main.command()
+@click.argument("snippet_id", required=False)
+@click.option(
     "--print-only", "-p", is_flag=True, help="Only print the command without executing"
 )
 @click.option("--edit", "-e", is_flag=True, help="Edit command before execution")
+@click.option("--copy", "-c", is_flag=True, help="Copy command to clipboard instead of executing")
 @click.option(
     "--param",
     "-P",
@@ -245,6 +351,7 @@ def exec(
     snippet_id: Optional[str] = None,
     print_only: bool = False,
     edit: bool = False,
+    copy: bool = False,
     param: tuple[str, ...] = (),
 ):
     """Execute a saved snippet. If no snippet ID is provided, shows an interactive selection."""
@@ -339,6 +446,13 @@ def exec(
 
         if print_only:
             console.print(final_command)
+        elif copy:
+            try:
+                pyperclip.copy(final_command)
+                console.print(f"[green]✓ Copied to clipboard:[/green] {final_command}")
+            except Exception as e:
+                console.print(f"[red]Failed to copy to clipboard:[/red] {str(e)}")
+                console.print(f"[yellow]Command:[/yellow] {final_command}")
         else:
             import subprocess
 

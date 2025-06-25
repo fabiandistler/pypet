@@ -205,3 +205,68 @@ def test_exec_snippet_not_found(runner, mock_storage):
         result = runner.invoke(main, ["exec", "non-existent-id"])
         assert result.exit_code == 1  # Click's error exit code
         assert "Snippet not found" in result.output
+
+
+def test_copy_command(runner, mock_storage):
+    """Test copying a snippet to clipboard."""
+    snippets = mock_storage.list_snippets()
+    snippet_id = snippets[0][0]
+
+    with patch("pypet.cli.storage", mock_storage), patch(
+        "pyperclip.copy"
+    ) as mock_copy:
+
+        result = runner.invoke(main, ["copy", snippet_id])
+        assert result.exit_code == 0
+        mock_copy.assert_called_once_with("ls -la")
+        assert "Copied to clipboard" in result.output
+
+
+def test_copy_interactive_selection(runner, mock_storage):
+    """Test copying a snippet through interactive selection."""
+    with patch("pypet.cli.storage", mock_storage), patch(
+        "rich.prompt.Prompt.ask", return_value="1"
+    ), patch("pyperclip.copy") as mock_copy:
+
+        result = runner.invoke(main, ["copy"])
+        assert result.exit_code == 0
+        mock_copy.assert_called_once_with("ls -la")
+        assert "Copied to clipboard" in result.output
+
+
+def test_copy_snippet_not_found(runner, mock_storage):
+    """Test copying a non-existent snippet."""
+    with patch("pypet.cli.storage", mock_storage):
+        result = runner.invoke(main, ["copy", "non-existent-id"])
+        assert result.exit_code == 1
+        assert "Snippet not found" in result.output
+
+
+def test_exec_with_copy_option(runner, mock_storage):
+    """Test executing a snippet with copy option."""
+    snippets = mock_storage.list_snippets()
+    snippet_id = snippets[0][0]
+
+    with patch("pypet.cli.storage", mock_storage), patch(
+        "pyperclip.copy"
+    ) as mock_copy:
+
+        result = runner.invoke(main, ["exec", snippet_id, "--copy"])
+        assert result.exit_code == 0
+        mock_copy.assert_called_once_with("ls -la")
+        assert "Copied to clipboard" in result.output
+
+
+def test_copy_with_clipboard_error(runner, mock_storage):
+    """Test copy command when clipboard fails."""
+    snippets = mock_storage.list_snippets()
+    snippet_id = snippets[0][0]
+
+    with patch("pypet.cli.storage", mock_storage), patch(
+        "pyperclip.copy", side_effect=Exception("Clipboard error")
+    ):
+
+        result = runner.invoke(main, ["copy", snippet_id])
+        assert result.exit_code == 0
+        assert "Failed to copy to clipboard" in result.output
+        assert "Command:" in result.output

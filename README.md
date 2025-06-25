@@ -8,6 +8,8 @@
 - TOML-based storage (`~/.config/pypet/snippets.toml`)
 - List and search your snippets with rich terminal output
 - Interactive command execution with pre-execution editing
+- **Copy snippets to clipboard** for easy pasting into other applications
+- Parameterized snippets with default values
 - Tag-based organization
 - Modern Python implementation with type hints
 - Comprehensive test coverage
@@ -41,6 +43,12 @@ pypet exec [snippet-id]
 
 # Execute with editing
 pypet exec [snippet-id] -e
+
+# Copy a snippet to clipboard
+pypet copy [snippet-id]
+
+# Execute with copy to clipboard option
+pypet exec [snippet-id] --copy
 
 # Edit a snippet
 pypet edit <snippet-id>

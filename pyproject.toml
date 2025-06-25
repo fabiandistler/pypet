@@ -8,6 +8,7 @@ dependencies = [
     "pytest>=8.4.0",
     "rich>=13.7.0",
     "toml>=0.10.2",
+    "pyperclip>=1.9.0",
 ]
 requires-python = ">=3.10"
 
