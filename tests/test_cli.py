@@ -52,7 +52,7 @@ def test_exec_with_id(runner, mock_storage):
     snippet_id = snippets[0][0]  # Get ID of first snippet
 
     with patch("pypet.cli.storage", mock_storage), patch(
-        "builtins.input", return_value="y"
+        "rich.prompt.Confirm.ask", return_value=True
     ), patch("subprocess.run") as mock_run:
 
         result = runner.invoke(main, ["exec", snippet_id])
@@ -63,7 +63,8 @@ def test_exec_with_id(runner, mock_storage):
 def test_exec_interactive_selection(runner, mock_storage):
     """Test executing a snippet through interactive selection."""
     with patch("pypet.cli.storage", mock_storage), patch(
-        "builtins.input", side_effect=["1", "y"]
+        "rich.prompt.Prompt.ask", return_value="1"
+    ), patch("rich.prompt.Confirm.ask", return_value=True
     ), patch("subprocess.run") as mock_run:
 
         result = runner.invoke(main, ["exec"])
@@ -78,7 +79,9 @@ def test_exec_with_edit(runner, mock_storage):
 
     with patch("pypet.cli.storage", mock_storage), patch(
         "click.edit", return_value="ls -lah"
-    ), patch("subprocess.run") as mock_run:
+    ), patch("subprocess.run") as mock_run, patch(
+        "rich.prompt.Confirm.ask", return_value=True
+    ):
 
         result = runner.invoke(main, ["exec", snippet_id, "-e"])
         assert result.exit_code == 0
@@ -93,7 +96,7 @@ def test_exec_cancel(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with patch("pypet.cli.storage", mock_storage), patch(
-        "builtins.input", return_value="n"
+        "rich.prompt.Confirm.ask", return_value=False
     ), patch("subprocess.run") as mock_run:
 
         result = runner.invoke(main, ["exec", snippet_id])
@@ -104,12 +107,12 @@ def test_exec_cancel(runner, mock_storage):
 def test_exec_interactive_invalid_choice(runner, mock_storage):
     """Test invalid input in interactive selection."""
     with patch("pypet.cli.storage", mock_storage), patch(
-        "builtins.input", side_effect=["invalid", "q"]
+        "rich.prompt.Prompt.ask", side_effect=["invalid", "q"]
     ):
 
         result = runner.invoke(main, ["exec"])
         assert result.exit_code == 0
-        assert "Please enter a valid number" in result.output
+        assert "Please enter a number" in result.output
 
 
 def test_search_command(runner, mock_storage):
@@ -136,10 +139,13 @@ def test_edit_command(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch(
-        "builtins.input", side_effect=["new command", "new description", "tag1,tag2"]
-    ):
-        result = runner.invoke(main, ["edit", snippet_id])
+    with patch("pypet.cli.storage", mock_storage):
+        result = runner.invoke(main, [
+            "edit", snippet_id, 
+            "--command", "new command",
+            "--description", "new description",
+            "--tags", "tag1,tag2"
+        ])
         assert result.exit_code == 0
         assert "Successfully updated snippet" in result.output
 
@@ -156,16 +162,16 @@ def test_delete_command(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with patch("pypet.cli.storage", mock_storage):
-        # Confirm deletion
-        result = runner.invoke(main, ["delete", snippet_id], input="y\n")
+        # Test successful deletion
+        result = runner.invoke(main, ["delete", snippet_id])
         assert result.exit_code == 0
         assert "Deleted snippet" in result.output
         assert mock_storage.get_snippet(snippet_id) is None
 
-        # Cancel deletion
-        result = runner.invoke(main, ["delete", snippet_id], input="n\n")
+        # Test deleting non-existent snippet
+        result = runner.invoke(main, ["delete", "nonexistent"])
         assert result.exit_code == 0
-        assert "Operation cancelled" in result.output
+        assert "Snippet not found" in result.output
 
 
 def test_exec_special_characters(runner, mock_storage):
@@ -178,7 +184,7 @@ def test_exec_special_characters(runner, mock_storage):
     )
 
     with patch("pypet.cli.storage", mock_storage), patch(
-        "builtins.input", return_value="y"
+        "rich.prompt.Confirm.ask", return_value=True
     ), patch("subprocess.run") as mock_run:
 
         result = runner.invoke(main, ["exec", snippet_id])

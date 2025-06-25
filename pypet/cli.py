@@ -8,7 +8,7 @@ import click
 import pyperclip
 from rich.console import Console
 from rich.table import Table
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm
 
 from .models import Parameter, Snippet
 from .storage import Storage
@@ -457,6 +457,12 @@ def exec(
                 console.print(f"[red]Failed to copy to clipboard:[/red] {str(e)}")
                 console.print(f"[yellow]Command:[/yellow] {final_command}")
         else:
+            # Confirm before execution
+            console.print(f"[yellow]Execute command:[/yellow] {final_command}")
+            if not Confirm.ask("Execute this command?"):
+                console.print("[yellow]Command execution cancelled[/yellow]")
+                return
+            
             import subprocess
 
             try:
