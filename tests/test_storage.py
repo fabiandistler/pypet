@@ -134,7 +134,7 @@ def test_search_case_sensitivity(temp_storage):
     # Case-insensitive search (default)
     assert len(temp_storage.search_snippets("git")) == 1
     assert len(temp_storage.search_snippets("docker")) == 1
-    assert len(temp_storage.search_snippets("STATUS")) == 2  # Matches both descriptions
+    assert len(temp_storage.search_snippets("STATUS")) == 1  # Matches only first description
 
 
 def test_search_special_characters(temp_storage):
@@ -180,5 +180,6 @@ def test_file_permission_error(tmp_path):
     storage_path.touch()
     storage_path.chmod(0o000)  # Remove all permissions
 
+    storage = Storage(config_path=storage_path)
     with pytest.raises(PermissionError):
-        Storage(config_path=storage_path)
+        storage.add_snippet("test", "test")

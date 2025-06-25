@@ -5,6 +5,7 @@ description = "A command-line snippet manager inspired by pet"
 authors = []
 dependencies = [
     "click>=8.1.7",
+    "pytest>=8.4.0",
     "rich>=13.7.0",
     "toml>=0.10.2",
 ]
