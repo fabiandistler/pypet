@@ -5,6 +5,26 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2025-06-25
+
+### 🔧 Fixed
+
+#### Git Synchronization Improvements (Issue #10)
+- **Fixed sync remote feature not working** - Resolved "No 'origin' remote configured" errors
+- **Intelligent first-time sync** - Automatically handles empty remote repositories
+- **Auto-upstream setup** - Sets branch tracking automatically on first push
+- **Better error handling** - Clear guidance when remotes are missing or repositories don't exist
+
+### ✨ Added
+- **New `pypet sync remote <url>` command** - Easy way to add/update Git remotes
+- **Enhanced error messages** - Specific hints and examples for common sync issues
+- **Improved documentation** - Updated README with remote configuration examples
+
+### 🧪 Technical
+- Added 3 new tests for remote command functionality (74 total tests)
+- Enhanced sync workflow robustness for edge cases
+- Better Git repository state detection
+
 ## [0.1.0] - 2025-06-25
 
 ### 🎉 Initial Release
