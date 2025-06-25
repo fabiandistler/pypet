@@ -9,7 +9,9 @@
 - List and search your snippets with rich terminal output
 - Interactive command execution with pre-execution editing
 - **Copy snippets to clipboard** for easy pasting into other applications
+- **Git synchronization** for backup and sharing across devices
 - Parameterized snippets with default values
+- Automatic backup and restore functionality
 - Tag-based organization
 - Modern Python implementation with type hints
 - Comprehensive test coverage
@@ -55,6 +57,14 @@ pypet edit <snippet-id>
 
 # Delete a snippet
 pypet delete <snippet-id>
+
+# Git synchronization
+pypet sync init                    # Initialize Git repository
+pypet sync status                  # Show sync status
+pypet sync commit -m "message"     # Commit changes
+pypet sync pull                    # Pull from remote
+pypet sync push                    # Push to remote
+pypet sync sync                    # Full sync (commit + pull + push)
 ```
 
 ### Parameterized Snippets
@@ -117,6 +127,56 @@ When running `pypet exec` without a snippet ID, it enters interactive mode:
 2. Lets you select a snippet by number
 3. Optionally allows editing the command before execution
 4. Asks for confirmation before running the command
+
+## Git Synchronization
+
+`pypet` supports Git-based synchronization to backup and share your snippets across devices.
+
+### Setup
+
+```bash
+# Initialize Git repository for snippets
+pypet sync init
+
+# Initialize with remote repository
+pypet sync init --remote https://github.com/username/pypet-snippets.git
+```
+
+### Basic Operations
+
+```bash
+# Check sync status
+pypet sync status
+
+# Commit current changes
+pypet sync commit -m "Added new Docker snippets"
+
+# Pull changes from remote
+pypet sync pull
+
+# Push changes to remote
+pypet sync push
+
+# Full sync (commit + pull + push)
+pypet sync sync
+```
+
+### Backup Management
+
+```bash
+# List available backups
+pypet sync backups
+
+# Restore from backup
+pypet sync restore snippets_backup_20250101_120000.toml
+```
+
+### Workflow
+
+1. **Initial Setup**: Run `pypet sync init` to create a Git repository
+2. **Add Remote**: Use `--remote` option or manually configure Git remote
+3. **Regular Sync**: Use `pypet sync sync` to keep snippets synchronized
+4. **Automatic Backups**: Backups are created before pull operations
 
 ## Development
 
