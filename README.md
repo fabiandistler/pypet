@@ -18,13 +18,30 @@
 
 ## Installation
 
-```bash
-# Using uv (recommended)
-uv pip install pypet
+### PyPI (Recommended)
 
-# Or using pip
+```bash
 pip install pypet
 ```
+
+### Development Installation
+
+```bash
+# Clone repository
+git clone https://github.com/fabiandistler/pypet.git
+cd pypet
+
+# Install with uv (recommended)
+uv pip install -e .
+
+# Or with pip
+pip install -e .
+```
+
+### Requirements
+
+- Python 3.10 or higher
+- Git (for synchronization features)
 
 ## Usage
 

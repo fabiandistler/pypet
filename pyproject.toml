@@ -1,17 +1,51 @@
 [project]
 name = "pypet"
 version = "0.1.0"
-description = "A command-line snippet manager inspired by pet"
-authors = []
+description = "A modern command-line snippet manager with Git synchronization, clipboard integration, and parameterized commands"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Fabian Distler", email = "fabian@distler.dev"},
+]
+keywords = ["snippets", "cli", "productivity", "git", "clipboard", "commands", "shell"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators", 
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
 dependencies = [
     "click>=8.1.7",
-    "pytest>=8.4.0",
     "rich>=13.7.0",
     "toml>=0.10.2",
     "pyperclip>=1.9.0",
     "gitpython>=3.1.40",
 ]
 requires-python = ">=3.10"
+
+[project.urls]
+Homepage = "https://github.com/fabiandistler/pypet"
+Repository = "https://github.com/fabiandistler/pypet.git"
+Issues = "https://github.com/fabiandistler/pypet/issues"
+Changelog = "https://github.com/fabiandistler/pypet/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-cov>=5.0.0",
+    "black>=24.0.0",
+    "ruff>=0.1.0",
+]
 
 [build-system]
 requires = ["hatchling"]
