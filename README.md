@@ -77,6 +77,7 @@ pypet delete <snippet-id>
 
 # Git synchronization
 pypet sync init                    # Initialize Git repository
+pypet sync remote <repo-url>       # Add/update remote repository
 pypet sync status                  # Show sync status
 pypet sync commit -m "message"     # Commit changes
 pypet sync pull                    # Pull from remote
@@ -157,6 +158,9 @@ pypet sync init
 
 # Initialize with remote repository
 pypet sync init --remote https://github.com/username/pypet-snippets.git
+
+# Or add remote to existing repository
+pypet sync remote https://github.com/username/pypet-snippets.git
 ```
 
 ### Basic Operations

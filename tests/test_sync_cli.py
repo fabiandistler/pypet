@@ -178,3 +178,56 @@ def test_sync_restore_failure(runner):
         result = runner.invoke(main, ["sync", "restore", "nonexistent.toml"])
         assert result.exit_code == 1
         assert "Failed to restore from nonexistent.toml" in result.output
+
+
+def test_sync_remote_add(runner):
+    """Test adding a remote."""
+    mock_repo = MagicMock()
+    mock_repo.remotes = []
+    mock_repo.create_remote = MagicMock()
+    
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
+        mock_sync_manager.is_git_repo = True
+        mock_sync_manager.repo = mock_repo
+        
+        result = runner.invoke(main, ["sync", "remote", "https://github.com/test/repo.git"])
+        assert result.exit_code == 0
+        assert "Added remote 'origin'" in result.output
+        mock_repo.create_remote.assert_called_once_with("origin", "https://github.com/test/repo.git")
+
+
+def test_sync_remote_update(runner):
+    """Test updating an existing remote."""
+    mock_remote = MagicMock()
+    mock_remote.name = "origin"
+    mock_remote.set_url = MagicMock()
+    
+    # Create a proper mock for remotes collection
+    mock_remotes = MagicMock()
+    mock_remotes.__contains__ = MagicMock(return_value=True)  # "origin" in remotes
+    mock_remotes.__getitem__ = MagicMock(return_value=mock_remote)  # remotes["origin"]
+    mock_remotes.__iter__ = MagicMock(return_value=iter([mock_remote]))  # for r in remotes
+    
+    mock_repo = MagicMock()
+    mock_repo.remotes = mock_remotes
+    
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
+        mock_sync_manager.is_git_repo = True
+        mock_sync_manager.repo = mock_repo
+        
+        result = runner.invoke(main, ["sync", "remote", "https://github.com/test/new-repo.git"])
+        if result.exit_code != 0:
+            print(f"Error output: {result.output}")
+        assert result.exit_code == 0
+        assert "Updated remote 'origin'" in result.output
+        mock_remote.set_url.assert_called_once_with("https://github.com/test/new-repo.git")
+
+
+def test_sync_remote_not_git_repo(runner):
+    """Test remote command when not in git repo."""
+    with patch("pypet.cli.sync_manager") as mock_sync_manager:
+        mock_sync_manager.is_git_repo = False
+        
+        result = runner.invoke(main, ["sync", "remote", "https://github.com/test/repo.git"])
+        assert result.exit_code == 1
+        assert "Not in a Git repository" in result.output
