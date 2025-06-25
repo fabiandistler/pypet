@@ -21,7 +21,7 @@
 ### PyPI (Recommended)
 
 ```bash
-pip install pypet
+pip install pypet-cli
 ```
 
 ### Development Installation

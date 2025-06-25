@@ -75,7 +75,7 @@ The first beta release of pypet - a modern command-line snippet manager inspired
 ## Installation
 
 ```bash
-pip install pypet
+pip install pypet-cli
 ```
 
 ## Quick Start
