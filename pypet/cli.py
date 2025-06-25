@@ -611,12 +611,14 @@ def restore(backup_file: str):
 def remote(remote_url: str, name: str = "origin"):
     """Add or update a Git remote for synchronization."""
     if not sync_manager.is_git_repo:
-        console.print("[red]Not in a Git repository. Use 'pypet sync init' first.[/red]")
+        console.print(
+            "[red]Not in a Git repository. Use 'pypet sync init' first.[/red]"
+        )
         raise click.ClickException("Not in a Git repository")
-    
+
     if not sync_manager.repo:
         raise click.ClickException("Failed to access Git repository")
-    
+
     try:
         # Check if remote already exists
         if name in [r.name for r in sync_manager.repo.remotes]:
@@ -628,12 +630,12 @@ def remote(remote_url: str, name: str = "origin"):
             # Add new remote
             sync_manager.repo.create_remote(name, remote_url)
             console.print(f"[green]✓ Added remote '{name}': {remote_url}[/green]")
-        
+
         # Show current remotes
         console.print("\n[blue]Current remotes:[/blue]")
         for r in sync_manager.repo.remotes:
             console.print(f"  {r.name}: {r.url}")
-            
+
     except Exception as e:
         console.print(f"[red]Failed to configure remote: {e}[/red]")
         raise click.ClickException(f"Failed to configure remote: {e}")

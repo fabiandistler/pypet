@@ -222,9 +222,15 @@ class SyncManager:
         if not self.repo or "origin" not in [r.name for r in self.repo.remotes]:
             console.print("[red]No 'origin' remote configured.[/red]")
             console.print("[yellow]To fix this, run one of:[/yellow]")
-            console.print("  [cyan]git -C ~/.config/pypet remote add origin <your-repo-url>[/cyan]")
-            console.print("  [cyan]pypet sync init --remote <your-repo-url>[/cyan] (reinitialize)")
-            console.print("[blue]Example:[/blue] git -C ~/.config/pypet remote add origin https://github.com/username/pypet-snippets.git")
+            console.print(
+                "  [cyan]git -C ~/.config/pypet remote add origin <your-repo-url>[/cyan]"
+            )
+            console.print(
+                "  [cyan]pypet sync init --remote <your-repo-url>[/cyan] (reinitialize)"
+            )
+            console.print(
+                "[blue]Example:[/blue] git -C ~/.config/pypet remote add origin https://github.com/username/pypet-snippets.git"
+            )
             return False
 
         success = True
