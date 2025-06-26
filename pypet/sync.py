@@ -305,6 +305,8 @@ class SyncManager:
 
         if success:
             console.print("[green]✓ Sync completed successfully[/green]")
+            # Clean up old backups after successful sync
+            self.cleanup_old_backups()
         else:
             console.print("[red]Sync completed with errors[/red]")
 
@@ -328,3 +330,35 @@ class SyncManager:
         except Exception as e:
             console.print(f"[red]Failed to restore backup: {e}[/red]")
             return False
+
+    def cleanup_old_backups(self, keep_count: int = 5) -> int:
+        """Clean up old backup files, keeping only the most recent ones.
+
+        Args:
+            keep_count: Number of backup files to keep (default: 5)
+
+        Returns:
+            Number of backup files deleted
+        """
+        backups = self.list_backups()
+
+        if len(backups) <= keep_count:
+            return 0
+
+        # Remove oldest backups (keep_count are already sorted newest-first)
+        backups_to_delete = backups[keep_count:]
+        deleted_count = 0
+
+        for backup_path in backups_to_delete:
+            try:
+                backup_path.unlink()
+                deleted_count += 1
+            except Exception as e:
+                console.print(
+                    f"[yellow]Warning: Failed to delete backup {backup_path}: {e}[/yellow]"
+                )
+
+        if deleted_count > 0:
+            console.print(f"[blue]Cleaned up {deleted_count} old backup files[/blue]")
+
+        return deleted_count

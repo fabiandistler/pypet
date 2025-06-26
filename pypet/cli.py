@@ -641,5 +641,40 @@ def remote(remote_url: str, name: str = "origin"):
         raise click.ClickException(f"Failed to configure remote: {e}")
 
 
+@sync.command()
+@click.option(
+    "--keep", "-k", default=5, help="Number of backup files to keep (default: 5)"
+)
+@click.option(
+    "--dry-run",
+    "-n",
+    is_flag=True,
+    help="Show what would be deleted without actually deleting",
+)
+def cleanup(keep: int, dry_run: bool):
+    """Clean up old backup files."""
+    backups = sync_manager.list_backups()
+
+    if len(backups) <= keep:
+        console.print(
+            f"[green]No cleanup needed. Found {len(backups)} backup files, keeping {keep}.[/green]"
+        )
+        return
+
+    backups_to_delete = backups[keep:]
+
+    if dry_run:
+        console.print(
+            f"[yellow]Would delete {len(backups_to_delete)} backup files:[/yellow]"
+        )
+        for backup in backups_to_delete:
+            console.print(f"  {backup.name}")
+        console.print("[blue]Run without --dry-run to actually delete them.[/blue]")
+    else:
+        deleted_count = sync_manager.cleanup_old_backups(keep)
+        if deleted_count == 0:
+            console.print("[green]No backups were deleted.[/green]")
+
+
 if __name__ == "__main__":
     main()
