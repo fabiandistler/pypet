@@ -4,6 +4,7 @@ Command-line interface for pypet
 
 from typing import Dict, Optional
 from datetime import datetime
+import subprocess
 import click
 import pyperclip
 from rich.console import Console
@@ -137,6 +138,163 @@ def new(
         parameters=parameters,
     )
     console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+
+@main.command("save-clipboard")
+@click.option("--description", "-d", help="Description for the snippet")
+@click.option("--tags", "-t", help="Tags for the snippet (comma-separated)")
+@click.option(
+    "--params",
+    "-p",
+    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
+)
+def save_clipboard(
+    description: Optional[str] = None,
+    tags: Optional[str] = None,
+    params: Optional[str] = None,
+):
+    """Save current clipboard content as a snippet."""
+    try:
+        command = pyperclip.paste()
+        if not command or not command.strip():
+            console.print(
+                "[red]Error:[/red] Clipboard is empty or contains only whitespace"
+            )
+            return
+
+        command = command.strip()
+        console.print(f"[blue]Clipboard content:[/blue] {command}")
+
+        # Ask for confirmation
+        if not Confirm.ask("Save this as a snippet?"):
+            console.print("[yellow]Cancelled.[/yellow]")
+            return
+
+        # Prompt for description if not provided
+        if not description:
+            description = Prompt.ask("Description", default="Snippet from clipboard")
+
+        # Parse tags and parameters
+        tag_list = [t.strip() for t in tags.split(",")] if tags else []
+        parameters = _parse_parameters(params) if params else None
+
+        snippet_id = storage.add_snippet(
+            command=command,
+            description=description,
+            tags=tag_list,
+            parameters=parameters,
+        )
+        console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+    except Exception as e:
+        console.print(f"[red]Error accessing clipboard:[/red] {e}")
+
+
+@main.command("save-last")
+@click.option("--description", "-d", help="Description for the snippet")
+@click.option("--tags", "-t", help="Tags for the snippet (comma-separated)")
+@click.option(
+    "--params",
+    "-p",
+    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
+)
+@click.option(
+    "--lines", "-n", default=1, help="Number of history lines to show (default: 1)"
+)
+def save_last(
+    description: Optional[str] = None,
+    tags: Optional[str] = None,
+    params: Optional[str] = None,
+    lines: int = 1,
+):
+    """Save the last command(s) from shell history as a snippet."""
+    try:
+        # Try to get history from bash/zsh
+        # This works for most shell configurations
+        result = subprocess.run(
+            ["bash", "-c", f"history | tail -{lines + 1} | head -{lines}"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+        if result.returncode != 0:
+            console.print("[red]Error:[/red] Could not access shell history")
+            console.print(
+                "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
+            )
+            return
+
+        history_output = result.stdout.strip()
+        if not history_output:
+            console.print("[red]Error:[/red] No history found")
+            return
+
+        # Parse history lines and extract commands
+        history_lines = history_output.split("\n")
+        commands = []
+
+        for line in history_lines:
+            # Remove leading numbers and whitespace (format: "  123  command")
+            # This handles most history formats
+            parts = line.strip().split(None, 1)
+            if len(parts) >= 2:
+                # Skip the line number and take the command
+                command = parts[1]
+                # Skip pypet commands to avoid recursion
+                if not command.startswith("pypet"):
+                    commands.append(command)
+
+        if not commands:
+            console.print("[red]Error:[/red] No valid commands found in recent history")
+            console.print("[yellow]Tip:[/yellow] Make sure you run some commands first")
+            return
+
+        # Show the commands and let user choose
+        if len(commands) == 1:
+            command = commands[0]
+        else:
+            console.print("[blue]Recent commands:[/blue]")
+            for i, cmd in enumerate(commands, 1):
+                console.print(f"  {i}. {cmd}")
+
+            choice = Prompt.ask(
+                "Which command to save?",
+                choices=[str(i) for i in range(1, len(commands) + 1)],
+                default="1",
+            )
+            command = commands[int(choice) - 1]
+
+        console.print(f"[blue]Selected command:[/blue] {command}")
+
+        # Ask for confirmation
+        if not Confirm.ask("Save this as a snippet?"):
+            console.print("[yellow]Cancelled.[/yellow]")
+            return
+
+        # Prompt for description if not provided
+        if not description:
+            description = Prompt.ask(
+                "Description", default=f"Command from history: {command[:50]}..."
+            )
+
+        # Parse tags and parameters
+        tag_list = [t.strip() for t in tags.split(",")] if tags else []
+        parameters = _parse_parameters(params) if params else None
+
+        snippet_id = storage.add_snippet(
+            command=command,
+            description=description,
+            tags=tag_list,
+            parameters=parameters,
+        )
+        console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+    except subprocess.TimeoutExpired:
+        console.print("[red]Error:[/red] Timeout accessing shell history")
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        console.print("[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead")
 
 
 @main.command()
