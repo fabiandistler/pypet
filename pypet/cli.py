@@ -4,6 +4,7 @@ Command-line interface for pypet
 
 from typing import Dict, Optional
 from datetime import datetime
+import subprocess
 import click
 import pyperclip
 from rich.console import Console
@@ -137,6 +138,198 @@ def new(
         parameters=parameters,
     )
     console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+
+@main.command("save-clipboard")
+@click.option("--description", "-d", help="Description for the snippet")
+@click.option("--tags", "-t", help="Tags for the snippet (comma-separated)")
+@click.option(
+    "--params",
+    "-p",
+    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
+)
+def save_clipboard(
+    description: Optional[str] = None,
+    tags: Optional[str] = None,
+    params: Optional[str] = None,
+):
+    """Save current clipboard content as a snippet."""
+    try:
+        command = pyperclip.paste()
+        if not command or not command.strip():
+            console.print(
+                "[red]Error:[/red] Clipboard is empty or contains only whitespace"
+            )
+            return
+
+        command = command.strip()
+        console.print(f"[blue]Clipboard content:[/blue] {command}")
+
+        # Ask for confirmation
+        if not Confirm.ask("Save this as a snippet?"):
+            console.print("[yellow]Cancelled.[/yellow]")
+            return
+
+        # Prompt for description if not provided
+        if not description:
+            description = Prompt.ask("Description", default="Snippet from clipboard")
+
+        # Parse tags and parameters
+        tag_list = [t.strip() for t in tags.split(",")] if tags else []
+        parameters = _parse_parameters(params) if params else None
+
+        snippet_id = storage.add_snippet(
+            command=command,
+            description=description,
+            tags=tag_list,
+            parameters=parameters,
+        )
+        console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+    except Exception as e:
+        console.print(f"[red]Error accessing clipboard:[/red] {e}")
+
+
+@main.command("save-last")
+@click.option("--description", "-d", help="Description for the snippet")
+@click.option("--tags", "-t", help="Tags for the snippet (comma-separated)")
+@click.option(
+    "--params",
+    "-p",
+    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
+)
+@click.option(
+    "--lines", "-n", default=1, help="Number of history lines to show (default: 1)"
+)
+def save_last(
+    description: Optional[str] = None,
+    tags: Optional[str] = None,
+    params: Optional[str] = None,
+    lines: int = 1,
+):
+    """Save the last command(s) from shell history as a snippet."""
+    import os
+    from pathlib import Path
+
+    try:
+        # Try to read from history file directly (more reliable than history builtin)
+        history_file = None
+
+        # Check common history file locations
+        possible_files = [
+            os.environ.get("HISTFILE"),  # User's custom HISTFILE
+            Path.home() / ".bash_history",
+            Path.home() / ".zsh_history",
+            Path.home() / ".history",
+        ]
+
+        for hist_file in possible_files:
+            if hist_file and Path(hist_file).exists():
+                history_file = Path(hist_file)
+                break
+
+        if not history_file:
+            console.print("[red]Error:[/red] Could not find shell history file")
+            console.print(
+                "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
+            )
+            console.print(
+                "[blue]Info:[/blue] Looked for: ~/.bash_history, ~/.zsh_history, ~/.history"
+            )
+            return
+
+        # Read last lines from history file
+        try:
+            with open(history_file, "r", encoding="utf-8", errors="ignore") as f:
+                all_lines = f.readlines()
+        except Exception as e:
+            console.print(f"[red]Error reading history file:[/red] {e}")
+            console.print(
+                "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
+            )
+            return
+
+        if not all_lines:
+            console.print("[red]Error:[/red] History file is empty")
+            return
+
+        # Get last N non-empty lines
+        recent_lines = []
+        for line in reversed(all_lines):
+            line = line.strip()
+            if line and not line.startswith("#"):  # Skip comments and empty lines
+                # Handle zsh extended history format: : 1234567890:0;command
+                if line.startswith(": ") and ";" in line:
+                    line = line.split(";", 1)[1]
+                recent_lines.append(line)
+                if (
+                    len(recent_lines) >= lines + 10
+                ):  # Get extra to filter pypet commands
+                    break
+
+        if not recent_lines:
+            console.print("[red]Error:[/red] No commands found in history")
+            return
+
+        # Filter out pypet commands and prepare final list
+        commands = []
+        for command in recent_lines:
+            # Skip pypet commands to avoid recursion
+            if not command.startswith("pypet") and command.strip():
+                commands.append(command.strip())
+                if len(commands) >= lines:  # We have enough commands
+                    break
+
+        if not commands:
+            console.print("[red]Error:[/red] No valid commands found in recent history")
+            console.print("[yellow]Tip:[/yellow] Make sure you run some commands first")
+            return
+
+        # Show the commands and let user choose
+        if len(commands) == 1:
+            command = commands[0]
+        else:
+            console.print("[blue]Recent commands:[/blue]")
+            for i, cmd in enumerate(commands, 1):
+                console.print(f"  {i}. {cmd}")
+
+            choice = Prompt.ask(
+                "Which command to save?",
+                choices=[str(i) for i in range(1, len(commands) + 1)],
+                default="1",
+            )
+            command = commands[int(choice) - 1]
+
+        console.print(f"[blue]Selected command:[/blue] {command}")
+
+        # Ask for confirmation
+        if not Confirm.ask("Save this as a snippet?"):
+            console.print("[yellow]Cancelled.[/yellow]")
+            return
+
+        # Prompt for description if not provided
+        if not description:
+            description = Prompt.ask(
+                "Description", default=f"Command from history: {command[:50]}..."
+            )
+
+        # Parse tags and parameters
+        tag_list = [t.strip() for t in tags.split(",")] if tags else []
+        parameters = _parse_parameters(params) if params else None
+
+        snippet_id = storage.add_snippet(
+            command=command,
+            description=description,
+            tags=tag_list,
+            parameters=parameters,
+        )
+        console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+    except subprocess.TimeoutExpired:
+        console.print("[red]Error:[/red] Timeout accessing shell history")
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        console.print("[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead")
 
 
 @main.command()

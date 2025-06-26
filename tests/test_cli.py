@@ -1,6 +1,6 @@
 """Test cases for the CLI interface"""
 
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 import pytest
 from click.testing import CliRunner
 
@@ -168,6 +168,71 @@ def test_edit_command(runner, mock_storage):
         assert snippet.command == "new command"
         assert snippet.description == "new description"
         assert snippet.tags == ["tag1", "tag2"]
+
+
+def test_save_clipboard_command(runner, mock_storage):
+    """Test saving from clipboard."""
+    with patch("pypet.cli.storage", mock_storage):
+        with patch("pypet.cli.pyperclip.paste", return_value="git status"):
+            with patch("pypet.cli.Confirm.ask", return_value=True):
+                with patch("pypet.cli.Prompt.ask", return_value="Git status check"):
+                    result = runner.invoke(main, ["save-clipboard"])
+                    assert result.exit_code == 0
+                    assert "Added new snippet with ID" in result.output
+
+
+def test_save_clipboard_empty(runner, mock_storage):
+    """Test saving from empty clipboard."""
+    with patch("pypet.cli.storage", mock_storage):
+        with patch("pypet.cli.pyperclip.paste", return_value=""):
+            result = runner.invoke(main, ["save-clipboard"])
+            assert result.exit_code == 0
+            assert "Clipboard is empty" in result.output
+
+
+def test_save_clipboard_with_options(runner, mock_storage):
+    """Test saving from clipboard with description and tags."""
+    with patch("pypet.cli.storage", mock_storage):
+        with patch("pypet.cli.pyperclip.paste", return_value="docker ps"):
+            with patch("pypet.cli.Confirm.ask", return_value=True):
+                result = runner.invoke(
+                    main,
+                    [
+                        "save-clipboard",
+                        "--description",
+                        "List Docker containers",
+                        "--tags",
+                        "docker,containers",
+                    ],
+                )
+                assert result.exit_code == 0
+                assert "Added new snippet with ID" in result.output
+
+
+def test_save_last_command(runner, mock_storage):
+    """Test saving from shell history."""
+    # Mock a history file with some commands
+    history_content = "ls -la\ngit status\npypet list\necho hello\n"
+
+    with patch("pypet.cli.storage", mock_storage):
+        # Mock finding a history file and reading it
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("builtins.open", mock_open(read_data=history_content)):
+                with patch("pypet.cli.Confirm.ask", return_value=True):
+                    with patch("pypet.cli.Prompt.ask", return_value="List files"):
+                        result = runner.invoke(main, ["save-last"])
+                        assert result.exit_code == 0
+                        assert "Added new snippet with ID" in result.output
+
+
+def test_save_last_no_history(runner, mock_storage):
+    """Test saving from history when no history available."""
+    with patch("pypet.cli.storage", mock_storage):
+        # Mock no history file found
+        with patch("pathlib.Path.exists", return_value=False):
+            result = runner.invoke(main, ["save-last"])
+            assert result.exit_code == 0
+            assert "Could not find shell history file" in result.output
 
 
 def test_delete_command(runner, mock_storage):
