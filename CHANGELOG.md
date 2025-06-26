@@ -5,6 +5,42 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-06-26
+
+### ✨ Added
+
+#### New Commands (Issue #8)
+- **New `pypet save-clipboard` command** - Save clipboard content as a snippet
+- **New `pypet save-last` command** - Save the last command(s) from shell history
+- **Cross-shell history support** - Works with bash, zsh, and other shells
+- **Interactive parameter extraction** - Automatically prompts for parameter descriptions
+
+#### Enhanced Edit Command (Issue #13)
+- **New `pypet edit --file` option** - Opens the TOML configuration file directly in your editor
+- **Flexible editing workflow** - Choose between editing specific snippets or the entire config
+
+#### Automatic Backup Management (Issue #12)
+- **Smart backup cleanup** - Automatically removes old backup files during sync operations
+- **Configurable retention** - Keeps the 5 most recent backups by default
+- **Background maintenance** - Cleanup happens transparently during normal sync operations
+
+### 🔧 Development Improvements
+- **Pre-push Git hooks** - Automatically run linting and tests before pushing
+- **Development Makefile** - Streamlined development workflow with `make dev`, `make test`, etc.
+- **Installation scripts** - Easy setup of development environment
+- **Enhanced CI/CD** - Better lint checking and automated quality gates
+
+### 🧪 Technical
+- **Expanded test coverage** - Now includes 80 comprehensive tests (up from 74)
+- **Improved shell integration** - Better history file detection and parsing
+- **Enhanced error handling** - More helpful error messages for edge cases
+- **Code quality improvements** - Consistent formatting and linting enforcement
+
+### 📚 Documentation
+- **Updated development guide** - Complete setup instructions with automation
+- **Enhanced README** - Better examples and workflow documentation
+- **Improved help text** - Clearer command descriptions and examples
+
 ## [0.1.1] - 2025-06-25
 
 ### 🔧 Fixed

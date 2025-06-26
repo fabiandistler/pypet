@@ -1,6 +1,6 @@
 [project]
 name = "pypet-cli"
-version = "0.1.1"
+version = "0.2.0"
 description = "A modern command-line snippet manager with Git synchronization, clipboard integration, and parameterized commands"
 readme = "README.md"
 license = {text = "MIT"}
