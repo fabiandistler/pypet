@@ -147,6 +147,46 @@ def test_restore_backup_nonexistent(sync_manager):
     assert result is False
 
 
+def test_cleanup_old_backups(sync_manager):
+    """Test cleaning up old backup files."""
+    # Create several backup files
+    backup_files = []
+    for i in range(8):
+        backup_path = (
+            sync_manager.config_dir / f"snippets_backup_202401{i:02d}_120000.toml"
+        )
+        backup_path.write_text("test backup")
+        backup_files.append(backup_path)
+
+    # Should delete oldest 3 files (keeping 5)
+    deleted_count = sync_manager.cleanup_old_backups(keep_count=5)
+
+    assert deleted_count == 3
+
+    # Check that 5 files remain
+    remaining_backups = sync_manager.list_backups()
+    assert len(remaining_backups) == 5
+
+
+def test_cleanup_old_backups_no_excess(sync_manager):
+    """Test cleanup when there are no excess backup files."""
+    # Create only 3 backup files
+    for i in range(3):
+        backup_path = (
+            sync_manager.config_dir / f"snippets_backup_202401{i:02d}_120000.toml"
+        )
+        backup_path.write_text("test backup")
+
+    # Should delete nothing (keeping 5, have only 3)
+    deleted_count = sync_manager.cleanup_old_backups(keep_count=5)
+
+    assert deleted_count == 0
+
+    # Check that all 3 files remain
+    remaining_backups = sync_manager.list_backups()
+    assert len(remaining_backups) == 3
+
+
 def test_pull_changes_no_repo(sync_manager):
     """Test pull when not in a Git repository."""
     result = sync_manager.pull_changes()
