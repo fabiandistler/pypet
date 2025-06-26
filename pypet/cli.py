@@ -208,42 +208,77 @@ def save_last(
     lines: int = 1,
 ):
     """Save the last command(s) from shell history as a snippet."""
-    try:
-        # Try to get history from bash/zsh
-        # This works for most shell configurations
-        result = subprocess.run(
-            ["bash", "-c", f"history | tail -{lines + 1} | head -{lines}"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
+    import os
+    from pathlib import Path
 
-        if result.returncode != 0:
-            console.print("[red]Error:[/red] Could not access shell history")
+    try:
+        # Try to read from history file directly (more reliable than history builtin)
+        history_file = None
+
+        # Check common history file locations
+        possible_files = [
+            os.environ.get("HISTFILE"),  # User's custom HISTFILE
+            Path.home() / ".bash_history",
+            Path.home() / ".zsh_history",
+            Path.home() / ".history",
+        ]
+
+        for hist_file in possible_files:
+            if hist_file and Path(hist_file).exists():
+                history_file = Path(hist_file)
+                break
+
+        if not history_file:
+            console.print("[red]Error:[/red] Could not find shell history file")
+            console.print(
+                "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
+            )
+            console.print(
+                "[blue]Info:[/blue] Looked for: ~/.bash_history, ~/.zsh_history, ~/.history"
+            )
+            return
+
+        # Read last lines from history file
+        try:
+            with open(history_file, "r", encoding="utf-8", errors="ignore") as f:
+                all_lines = f.readlines()
+        except Exception as e:
+            console.print(f"[red]Error reading history file:[/red] {e}")
             console.print(
                 "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
             )
             return
 
-        history_output = result.stdout.strip()
-        if not history_output:
-            console.print("[red]Error:[/red] No history found")
+        if not all_lines:
+            console.print("[red]Error:[/red] History file is empty")
             return
 
-        # Parse history lines and extract commands
-        history_lines = history_output.split("\n")
-        commands = []
+        # Get last N non-empty lines
+        recent_lines = []
+        for line in reversed(all_lines):
+            line = line.strip()
+            if line and not line.startswith("#"):  # Skip comments and empty lines
+                # Handle zsh extended history format: : 1234567890:0;command
+                if line.startswith(": ") and ";" in line:
+                    line = line.split(";", 1)[1]
+                recent_lines.append(line)
+                if (
+                    len(recent_lines) >= lines + 10
+                ):  # Get extra to filter pypet commands
+                    break
 
-        for line in history_lines:
-            # Remove leading numbers and whitespace (format: "  123  command")
-            # This handles most history formats
-            parts = line.strip().split(None, 1)
-            if len(parts) >= 2:
-                # Skip the line number and take the command
-                command = parts[1]
-                # Skip pypet commands to avoid recursion
-                if not command.startswith("pypet"):
-                    commands.append(command)
+        if not recent_lines:
+            console.print("[red]Error:[/red] No commands found in history")
+            return
+
+        # Filter out pypet commands and prepare final list
+        commands = []
+        for command in recent_lines:
+            # Skip pypet commands to avoid recursion
+            if not command.startswith("pypet") and command.strip():
+                commands.append(command.strip())
+                if len(commands) >= lines:  # We have enough commands
+                    break
 
         if not commands:
             console.print("[red]Error:[/red] No valid commands found in recent history")

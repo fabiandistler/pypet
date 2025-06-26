@@ -1,6 +1,6 @@
 """Test cases for the CLI interface"""
 
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 import pytest
 from click.testing import CliRunner
 
@@ -211,27 +211,28 @@ def test_save_clipboard_with_options(runner, mock_storage):
 
 def test_save_last_command(runner, mock_storage):
     """Test saving from shell history."""
-    history_output = "  123  ls -la"
+    # Mock a history file with some commands
+    history_content = "ls -la\ngit status\npypet list\necho hello\n"
 
     with patch("pypet.cli.storage", mock_storage):
-        with patch("pypet.cli.subprocess.run") as mock_run:
-            mock_run.return_value.returncode = 0
-            mock_run.return_value.stdout = history_output
-            with patch("pypet.cli.Confirm.ask", return_value=True):
-                with patch("pypet.cli.Prompt.ask", return_value="List files"):
-                    result = runner.invoke(main, ["save-last"])
-                    assert result.exit_code == 0
-                    assert "Added new snippet with ID" in result.output
+        # Mock finding a history file and reading it
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("builtins.open", mock_open(read_data=history_content)):
+                with patch("pypet.cli.Confirm.ask", return_value=True):
+                    with patch("pypet.cli.Prompt.ask", return_value="List files"):
+                        result = runner.invoke(main, ["save-last"])
+                        assert result.exit_code == 0
+                        assert "Added new snippet with ID" in result.output
 
 
 def test_save_last_no_history(runner, mock_storage):
     """Test saving from history when no history available."""
     with patch("pypet.cli.storage", mock_storage):
-        with patch("pypet.cli.subprocess.run") as mock_run:
-            mock_run.return_value.returncode = 1
+        # Mock no history file found
+        with patch("pathlib.Path.exists", return_value=False):
             result = runner.invoke(main, ["save-last"])
             assert result.exit_code == 0
-            assert "Could not access shell history" in result.output
+            assert "Could not find shell history file" in result.output
 
 
 def test_delete_command(runner, mock_storage):
