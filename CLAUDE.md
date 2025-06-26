@@ -122,3 +122,8 @@ Parameters are defined with optional descriptions and are prompted for during in
 - **Release process**: GitHub Actions handles PyPI publishing automatically on tag push
 - **Git sync feature**: Works with any Git service, handles edge cases robustly
 - **Testing**: All 74 tests must pass before any release
+
+### Git Workflow Guidelines
+
+- **Always run linting on all files before pushing**
+- **Always work with PRs and don't push to main without asking**
