@@ -4,6 +4,7 @@ Command-line interface for pypet
 
 from typing import Dict, Optional
 from datetime import datetime
+import os
 import subprocess
 import click
 import pyperclip
@@ -366,7 +367,7 @@ def delete(snippet_id: str):
 
 
 @main.command()
-@click.argument("snippet_id")
+@click.argument("snippet_id", required=False)
 @click.option("--command", "-c", help="New command")
 @click.option("--description", "-d", help="New description")
 @click.option("--tags", "-t", help="New tags (comma-separated)")
@@ -375,14 +376,42 @@ def delete(snippet_id: str):
     "-p",
     help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
 )
+@click.option(
+    "--file", "-f", "edit_file", is_flag=True, help="Open TOML file directly in editor"
+)
 def edit(
-    snippet_id: str,
+    snippet_id: Optional[str] = None,
     command: Optional[str] = None,
     description: Optional[str] = None,
     tags: Optional[str] = None,
     params: Optional[str] = None,
+    edit_file: bool = False,
 ):
-    """Edit an existing snippet."""
+    """Edit an existing snippet or open TOML file directly."""
+    # Handle --file option to open TOML directly
+    if edit_file:
+        editor = os.environ.get("EDITOR", "nano")
+        try:
+            subprocess.run([editor, str(storage.config_path)])
+            console.print(f"[green]✓ Opened {storage.config_path} in {editor}[/green]")
+        except FileNotFoundError:
+            console.print(
+                f"[red]Error:[/red] Editor '{editor}' not found. Set EDITOR environment variable."
+            )
+        except Exception as e:
+            console.print(f"[red]Error:[/red] Failed to open editor: {e}")
+        return
+
+    # Require snippet_id if not using --file option
+    if not snippet_id:
+        console.print(
+            "[red]Error:[/red] Either provide a snippet ID or use --file to edit TOML directly"
+        )
+        console.print("[yellow]Examples:[/yellow]")
+        console.print("  pypet edit abc123 --command 'new command'")
+        console.print("  pypet edit --file")
+        return
+
     # Check if snippet exists first
     existing = storage.get_snippet(snippet_id)
     if not existing:

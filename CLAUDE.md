@@ -118,12 +118,33 @@ Parameters are defined with optional descriptions and are prompted for during in
 - Updated to 74 total tests
 
 ### Development Workflow Notes
-- **Always run linting before commits**: `black` and `ruff` are required
+- **Git Hooks**: Pre-push hooks automatically run linting and tests
+- **Makefile**: Use `make` commands for development tasks
+- **Linting**: `black` and `ruff` are enforced via pre-push hooks
 - **Release process**: GitHub Actions handles PyPI publishing automatically on tag push
 - **Git sync feature**: Works with any Git service, handles edge cases robustly
-- **Testing**: All 74 tests must pass before any release
+- **Testing**: All tests must pass before any release
+
+### Development Setup
+```bash
+# Install development environment with hooks
+make dev
+
+# Or manually:
+make install        # Install package in dev mode
+make hooks         # Install pre-push git hooks
+```
+
+### Daily Development Commands
+```bash
+make format        # Auto-format code
+make lint          # Check linting
+make test          # Run tests
+make all           # Run format + lint + test
+```
 
 ### Git Workflow Guidelines
-
-- **Always run linting on all files before pushing**
+- **Pre-push hooks**: Automatically run linting and tests before push
+- **Bypass hooks**: Use `git push --no-verify` only in emergencies
 - **Always work with PRs and don't push to main without asking**
+- **Skip tests**: Set `SKIP_TESTS=1` to skip tests in hooks
