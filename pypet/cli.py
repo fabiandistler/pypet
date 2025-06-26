@@ -390,19 +390,23 @@ def edit(
     """Edit an existing snippet or open TOML file directly."""
     # Handle --file option to open TOML directly
     if edit_file:
-        editor = os.environ.get('EDITOR', 'nano')
+        editor = os.environ.get("EDITOR", "nano")
         try:
             subprocess.run([editor, str(storage.config_path)])
             console.print(f"[green]✓ Opened {storage.config_path} in {editor}[/green]")
         except FileNotFoundError:
-            console.print(f"[red]Error:[/red] Editor '{editor}' not found. Set EDITOR environment variable.")
+            console.print(
+                f"[red]Error:[/red] Editor '{editor}' not found. Set EDITOR environment variable."
+            )
         except Exception as e:
             console.print(f"[red]Error:[/red] Failed to open editor: {e}")
         return
-    
+
     # Require snippet_id if not using --file option
     if not snippet_id:
-        console.print("[red]Error:[/red] Either provide a snippet ID or use --file to edit TOML directly")
+        console.print(
+            "[red]Error:[/red] Either provide a snippet ID or use --file to edit TOML directly"
+        )
         console.print("[yellow]Examples:[/yellow]")
         console.print("  pypet edit abc123 --command 'new command'")
         console.print("  pypet edit --file")
