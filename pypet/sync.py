@@ -172,27 +172,39 @@ class SyncManager:
 
             origin = self.repo.remotes.origin
             current_branch = self.repo.active_branch
-            
+
             # Check if remote branch exists
             try:
                 origin.fetch()
                 remote_branches = [ref.name for ref in origin.refs]
                 remote_branch_name = f"origin/{current_branch.name}"
-                
+
                 if remote_branch_name not in remote_branches:
-                    console.print(f"[yellow]Remote branch '{current_branch.name}' doesn't exist yet.[/yellow]")
-                    console.print("[blue]This is normal for first push. Skipping pull.[/blue]")
+                    console.print(
+                        f"[yellow]Remote branch '{current_branch.name}' doesn't exist yet.[/yellow]"
+                    )
+                    console.print(
+                        "[blue]This is normal for first push. Skipping pull.[/blue]"
+                    )
                     return True
-                
+
                 # Pull from origin
                 origin.pull()
-                console.print("[green]✓ Successfully pulled changes from origin[/green]")
+                console.print(
+                    "[green]✓ Successfully pulled changes from origin[/green]"
+                )
                 return True
-                
+
             except Exception as fetch_error:
-                if "does not exist" in str(fetch_error) or "not found" in str(fetch_error):
-                    console.print("[yellow]Remote repository appears empty or doesn't exist.[/yellow]")
-                    console.print("[blue]This is normal for first push. Skipping pull.[/blue]")
+                if "does not exist" in str(fetch_error) or "not found" in str(
+                    fetch_error
+                ):
+                    console.print(
+                        "[yellow]Remote repository appears empty or doesn't exist.[/yellow]"
+                    )
+                    console.print(
+                        "[blue]This is normal for first push. Skipping pull.[/blue]"
+                    )
                     return True
                 else:
                     raise fetch_error
@@ -219,12 +231,17 @@ class SyncManager:
 
             origin = self.repo.remotes.origin
             current_branch = self.repo.active_branch
-            
+
             # Check if upstream is set, if not set it
             if not current_branch.tracking_branch():
-                console.print(f"[yellow]Setting upstream for branch '{current_branch.name}'[/yellow]")
+                console.print(
+                    f"[yellow]Setting upstream for branch '{current_branch.name}'[/yellow]"
+                )
                 # Push with --set-upstream
-                origin.push(refspec=f"{current_branch.name}:{current_branch.name}", set_upstream=True)
+                origin.push(
+                    refspec=f"{current_branch.name}:{current_branch.name}",
+                    set_upstream=True,
+                )
             else:
                 # Normal push
                 origin.push()
@@ -236,10 +253,14 @@ class SyncManager:
             console.print(f"[red]Failed to push changes: {e}[/red]")
             # Check if it's because remote repository doesn't exist
             if "does not exist" in str(e) or "not found" in str(e):
-                console.print("[yellow]Hint: Make sure the remote repository exists on GitHub/GitLab[/yellow]")
+                console.print(
+                    "[yellow]Hint: Make sure the remote repository exists on GitHub/GitLab[/yellow]"
+                )
                 console.print(f"[blue]Repository URL: {origin.url}[/blue]")
             elif "no upstream branch" in str(e):
-                console.print("[yellow]Hint: Try setting upstream with --set-upstream[/yellow]")
+                console.print(
+                    "[yellow]Hint: Try setting upstream with --set-upstream[/yellow]"
+                )
             return False
 
     def sync(
