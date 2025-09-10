@@ -2,6 +2,7 @@
 Data models for pypet snippets
 """
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional, List, Dict
@@ -122,22 +123,71 @@ class Snippet:
         """
         Apply parameter values to the command string.
 
+        This method automatically detects parameter placeholders in the command string
+        in the format {name} or {name=default} and substitutes them with provided values.
+
+        For formally defined parameters (in self.parameters), it uses their definitions.
+        For undefined parameters found in the command, it extracts defaults from the
+        placeholder format {name=default} or raises an error if no value is provided.
+
         If a parameter is not provided in params, its default value will be used.
         If a parameter has no default and is not provided, a ValueError is raised.
         """
         params = params or {}
         result = self.command
 
-        if self.parameters:
-            for name, param in self.parameters.items():
-                value = params.get(name, param.default)
-                if value is None:
-                    raise ValueError(
-                        f"No value provided for required parameter: {name}"
-                    )
+        # Get all parameters (both defined and discovered from placeholders)
+        all_params = self.get_all_parameters()
 
-                # Replace both ${name} and {name} patterns
-                result = result.replace(f"${{{name}}}", value)
-                result = result.replace(f"{{{name}}}", value)
+        # Apply parameter substitution
+        for name, param in all_params.items():
+            value = params.get(name, param.default)
+            if value is None:
+                raise ValueError(f"No value provided for required parameter: {name}")
+
+            # Replace both ${name} and {name} patterns
+            result = result.replace(f"${{{name}}}", value)
+            result = result.replace(f"{{{name}}}", value)
+
+            # Also replace {name=default} patterns
+            if param.default is not None:
+                result = result.replace(f"{{{name}={param.default}}}", value)
 
         return result
+
+    def get_all_parameters(self) -> Dict[str, Parameter]:
+        """
+        Get all parameters for this snippet, including both formally defined ones
+        and those discovered from command placeholders.
+
+        Returns a dictionary mapping parameter names to Parameter objects.
+        """
+        # Find all parameter placeholders in the command string
+        placeholder_pattern = r"\{([^}]+)\}"
+        placeholders = re.findall(placeholder_pattern, self.command)
+
+        # Build a complete parameter map combining defined parameters and discovered ones
+        all_params = {}
+
+        # First, add formally defined parameters
+        if self.parameters:
+            all_params.update(self.parameters)
+
+        # Then, discover parameters from placeholders not already defined
+        for placeholder in placeholders:
+            if "=" in placeholder:
+                # Format: {name=default}
+                param_name, param_default = placeholder.split("=", 1)
+                param_name = param_name.strip()
+            else:
+                # Format: {name}
+                param_name = placeholder.strip()
+                param_default = None
+
+            # Only add if not already formally defined
+            if param_name not in all_params:
+                all_params[param_name] = Parameter(
+                    name=param_name, default=param_default, description=None
+                )
+
+        return all_params

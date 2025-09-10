@@ -55,7 +55,6 @@ def test_exec_with_id(runner, mock_storage):
         patch("rich.prompt.Confirm.ask", return_value=True),
         patch("subprocess.run") as mock_run,
     ):
-
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
         mock_run.assert_called_once()
@@ -69,7 +68,6 @@ def test_exec_interactive_selection(runner, mock_storage):
         patch("rich.prompt.Confirm.ask", return_value=True),
         patch("subprocess.run") as mock_run,
     ):
-
         result = runner.invoke(main, ["exec"])
         assert result.exit_code == 0
         mock_run.assert_called_once()
@@ -86,7 +84,6 @@ def test_exec_with_edit(runner, mock_storage):
         patch("subprocess.run") as mock_run,
         patch("rich.prompt.Confirm.ask", return_value=True),
     ):
-
         result = runner.invoke(main, ["exec", snippet_id, "-e"])
         assert result.exit_code == 0
         mock_run.assert_called_once()
@@ -104,7 +101,6 @@ def test_exec_cancel(runner, mock_storage):
         patch("rich.prompt.Confirm.ask", return_value=False),
         patch("subprocess.run") as mock_run,
     ):
-
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
         mock_run.assert_not_called()
@@ -116,7 +112,6 @@ def test_exec_interactive_invalid_choice(runner, mock_storage):
         patch("pypet.cli.storage", mock_storage),
         patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
     ):
-
         result = runner.invoke(main, ["exec"])
         assert result.exit_code == 0
         assert "Please enter a number" in result.output
@@ -286,7 +281,6 @@ def test_exec_special_characters(runner, mock_storage):
         patch("rich.prompt.Confirm.ask", return_value=True),
         patch("subprocess.run") as mock_run,
     ):
-
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
         mock_run.assert_called_once()
@@ -300,7 +294,6 @@ def test_exec_interactive_invalid_input(runner, mock_storage):
         patch("pypet.cli.storage", mock_storage),
         patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
     ):
-
         result = runner.invoke(main, ["exec"])
         assert result.exit_code == 0
         assert "Please enter a number" in result.output
@@ -320,7 +313,6 @@ def test_copy_command(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with patch("pypet.cli.storage", mock_storage), patch("pyperclip.copy") as mock_copy:
-
         result = runner.invoke(main, ["copy", snippet_id])
         assert result.exit_code == 0
         mock_copy.assert_called_once_with("ls -la")
@@ -334,7 +326,6 @@ def test_copy_interactive_selection(runner, mock_storage):
         patch("rich.prompt.Prompt.ask", return_value="1"),
         patch("pyperclip.copy") as mock_copy,
     ):
-
         result = runner.invoke(main, ["copy"])
         assert result.exit_code == 0
         mock_copy.assert_called_once_with("ls -la")
@@ -355,7 +346,6 @@ def test_exec_with_copy_option(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with patch("pypet.cli.storage", mock_storage), patch("pyperclip.copy") as mock_copy:
-
         result = runner.invoke(main, ["exec", snippet_id, "--copy"])
         assert result.exit_code == 0
         mock_copy.assert_called_once_with("ls -la")
@@ -371,7 +361,6 @@ def test_copy_with_clipboard_error(runner, mock_storage):
         patch("pypet.cli.storage", mock_storage),
         patch("pyperclip.copy", side_effect=Exception("Clipboard error")),
     ):
-
         result = runner.invoke(main, ["copy", snippet_id])
         assert result.exit_code == 0
         assert "Failed to copy to clipboard" in result.output
