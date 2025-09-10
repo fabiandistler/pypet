@@ -21,10 +21,15 @@ storage = Storage()
 sync_manager = SyncManager(storage.config_path)
 
 
-def _format_parameters(parameters: Optional[Dict[str, Parameter]]) -> str:
+def _format_parameters(snippet: Optional[Snippet]) -> str:
     """Format parameters for display in table."""
+    if not snippet:
+        return ""
+
+    parameters = snippet.get_all_parameters()
     if not parameters:
         return ""
+
     return ", ".join(
         f"{name}={param.default or '<required>'}"
         + (f" ({param.description})" if param.description else "")
@@ -62,13 +67,21 @@ def _parse_parameters(param_str: str) -> Dict[str, Parameter]:
     return parameters
 
 
-def _prompt_for_parameters(snippet: Snippet) -> Dict[str, str]:
-    """Prompt user for parameter values."""
-    if not snippet.parameters:
+def _prompt_for_parameters(
+    snippet: Snippet, provided_params: Optional[Dict[str, str]] = None
+) -> Dict[str, str]:
+    """Prompt user for parameter values that weren't already provided."""
+    provided_params = provided_params or {}
+    all_parameters = snippet.get_all_parameters()
+    if not all_parameters:
         return {}
 
     values = {}
-    for name, param in snippet.parameters.items():
+    for name, param in all_parameters.items():
+        # Skip parameters that were already provided
+        if name in provided_params:
+            continue
+
         prompt = f"{name}"
         if param.description:
             prompt += f" ({param.description})"
@@ -107,7 +120,7 @@ def list_snippets():
             snippet.command,
             snippet.description or "",
             ", ".join(snippet.tags) if snippet.tags else "",
-            _format_parameters(snippet.parameters),
+            _format_parameters(snippet),
         )
 
     console.print(table)
@@ -350,7 +363,7 @@ def search(query: str):
             snippet.command,
             snippet.description or "",
             ", ".join(snippet.tags) if snippet.tags else "",
-            _format_parameters(snippet.parameters),
+            _format_parameters(snippet),
         )
 
     console.print(table)
@@ -448,7 +461,7 @@ def edit(
             table.add_row("Command", updated.command)
             table.add_row("Description", updated.description or "")
             table.add_row("Tags", ", ".join(updated.tags) if updated.tags else "")
-            table.add_row("Parameters", _format_parameters(updated.parameters))
+            table.add_row("Parameters", _format_parameters(updated))
 
             console.print(table)
     else:
@@ -494,7 +507,7 @@ def copy(
                     id_,
                     snippet.command,
                     snippet.description or "",
-                    _format_parameters(snippet.parameters),
+                    _format_parameters(snippet),
                 )
 
             console.print(table)
@@ -536,10 +549,9 @@ def copy(
                 return
 
         # If not all parameters are provided via command line, prompt for them
-        if selected_snippet.parameters and len(param_values) < len(
-            selected_snippet.parameters
-        ):
-            interactive_values = _prompt_for_parameters(selected_snippet)
+        all_parameters = selected_snippet.get_all_parameters()
+        if all_parameters and len(param_values) < len(all_parameters):
+            interactive_values = _prompt_for_parameters(selected_snippet, param_values)
             param_values.update(interactive_values)
 
         # Apply parameters to get final command
@@ -610,7 +622,7 @@ def exec(
                     id_,
                     snippet.command,
                     snippet.description or "",
-                    _format_parameters(snippet.parameters),
+                    _format_parameters(snippet),
                 )
 
             console.print(table)
@@ -652,10 +664,9 @@ def exec(
                 return
 
         # If not all parameters are provided via command line, prompt for them
-        if selected_snippet.parameters and len(param_values) < len(
-            selected_snippet.parameters
-        ):
-            interactive_values = _prompt_for_parameters(selected_snippet)
+        all_parameters = selected_snippet.get_all_parameters()
+        if all_parameters and len(param_values) < len(all_parameters):
+            interactive_values = _prompt_for_parameters(selected_snippet, param_values)
             param_values.update(interactive_values)
 
         # Apply parameters to get final command
