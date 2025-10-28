@@ -36,3 +36,5 @@ ENV/
 
 # Local configuration
 .pypet.toml
+
+.claude/*
