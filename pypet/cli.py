@@ -404,6 +404,15 @@ def edit(
     # Handle --file option to open TOML directly
     if edit_file:
         editor = os.environ.get("EDITOR", "nano")
+
+        # Basic validation: editor should not contain shell metacharacters
+        if any(char in editor for char in [";", "&", "|", ">", "<", "`", "$"]):
+            console.print(
+                f"[red]Error:[/red] Invalid EDITOR value '{editor}'. "
+                "EDITOR should be a simple command name or path."
+            )
+            return
+
         try:
             subprocess.run([editor, str(storage.config_path)])
             console.print(f"[green]✓ Opened {storage.config_path} in {editor}[/green]")
@@ -698,8 +707,23 @@ def exec(
                 console.print(f"[red]Failed to copy to clipboard:[/red] {str(e)}")
                 console.print(f"[yellow]Command:[/yellow] {final_command}")
         else:
+            # Check for potentially dangerous patterns
+            dangerous_patterns = [";", "&&", "||", "|", ">", ">>", "<", "`", "$()"]
+            has_dangerous = any(
+                pattern in final_command for pattern in dangerous_patterns
+            )
+
             # Confirm before execution
             console.print(f"[yellow]Execute command:[/yellow] {final_command}")
+
+            if has_dangerous:
+                console.print(
+                    "[red]Warning:[/red] Command contains shell operators that could be dangerous."
+                )
+                console.print(
+                    "[yellow]Please review carefully before executing.[/yellow]"
+                )
+
             if not Confirm.ask("Execute this command?"):
                 console.print("[yellow]Command execution cancelled[/yellow]")
                 return
@@ -707,6 +731,8 @@ def exec(
             import subprocess
 
             try:
+                # Note: shell=True is required for pypet's use case of executing shell commands
+                # with pipes, redirects, etc. User confirmation is required before execution.
                 subprocess.run(final_command, shell=True, check=True)
             except subprocess.CalledProcessError as e:
                 console.print(
