@@ -54,6 +54,13 @@ pypet list
 # Add a new snippet
 pypet new "git commit -m" -d "Create a git commit" -t "git,version-control"
 
+# Save clipboard content as a snippet
+pypet save-clipboard -d "Description" -t "tag1,tag2"
+
+# Save last command(s) from shell history
+pypet save-last                    # Save last command
+pypet save-last -n 3               # Save last 3 commands
+
 # Search snippets
 pypet search "git"
 
@@ -71,6 +78,9 @@ pypet exec [snippet-id] --copy
 
 # Edit a snippet
 pypet edit <snippet-id>
+
+# Edit the snippets configuration file directly
+pypet edit --file
 
 # Delete a snippet
 pypet delete <snippet-id>
@@ -137,6 +147,37 @@ name = "image"
 description = "Docker image name"
 ```
 
+### Saving Snippets from Clipboard and History
+
+`pypet` provides convenient ways to save snippets from your clipboard or shell history:
+
+#### Save from Clipboard
+
+```bash
+# Save current clipboard content
+pypet save-clipboard -d "My command description" -t "docker,development"
+
+# Interactive mode (prompts for description and tags)
+pypet save-clipboard
+```
+
+This command automatically detects parameters in the clipboard content and prompts you to add descriptions for them.
+
+#### Save from Shell History
+
+```bash
+# Save the last command from your shell history
+pypet save-last
+
+# Save multiple commands (creates separate snippets)
+pypet save-last -n 3
+
+# With description and tags
+pypet save-last -d "Build command" -t "build,make"
+```
+
+The `save-last` command works with bash, zsh, and other popular shells. It reads from your shell history file and lets you save recent commands as snippets.
+
 ### Interactive Mode
 
 When running `pypet exec` without a snippet ID, it enters interactive mode:
@@ -192,6 +233,8 @@ pypet sync backups
 pypet sync restore snippets_backup_20250101_120000.toml
 ```
 
+**Automatic Cleanup**: `pypet` automatically manages your backups by keeping only the 5 most recent backup files. Old backups are cleaned up during sync operations to prevent disk space accumulation.
+
 ### Workflow
 
 1. **Initial Setup**: Run `pypet sync init` to create a Git repository
@@ -201,34 +244,89 @@ pypet sync restore snippets_backup_20250101_120000.toml
 
 ## Development
 
-This project uses `uv` for dependency management and `pytest` for testing.
+This project uses `uv` for dependency management, `pytest` for testing, and includes pre-push git hooks for quality assurance.
 
-1. Clone the repository:
+### Quick Setup
 
-   ```bash
-   git clone https://github.com/yourusername/pypet.git
-   cd pypet
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/fabiandistler/pypet.git
+cd pypet
 
-2. Set up the development environment:
+# Set up development environment with hooks (recommended)
+make dev
+```
 
-   ```bash
-   uv venv
-   source .venv/bin/activate
-   uv pip install -e ".[dev]"
-   ```
+This installs the package in development mode and sets up pre-push git hooks that automatically run linting and tests before each push.
 
-3. Run tests:
+### Manual Setup
 
-   ```bash
-   pytest
-   ```
+```bash
+# Create virtual environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-4. Try the CLI:
+# Install package in development mode
+uv pip install -e ".[dev]"
 
-   ```bash
-   pypet --help
-   ```
+# Install git hooks (optional but recommended)
+make hooks
+```
+
+### Development Commands
+
+```bash
+# Format code with black
+make format
+
+# Check linting with ruff
+make lint
+
+# Run tests
+make test
+
+# Run all checks (format + lint + test)
+make all
+
+# Clean build artifacts
+make clean
+```
+
+### Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_cli.py
+
+# Run with coverage
+pytest --cov=pypet
+```
+
+### Git Hooks
+
+Pre-push hooks automatically run before each push:
+
+- Code formatting with `black`
+- Linting with `ruff`
+- Full test suite with `pytest`
+
+To bypass hooks (use sparingly):
+
+```bash
+git push --no-verify
+```
+
+To skip only tests (for quick iterations):
+
+```bash
+SKIP_TESTS=1 git push
+```
 
 ## Storage Format
 
