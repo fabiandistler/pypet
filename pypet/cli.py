@@ -225,62 +225,130 @@ def save_last(
 ):
     """Save the last command(s) from shell history as a snippet."""
     try:
-        # Try to read from history file directly (more reliable than history builtin)
-        history_file = None
-
-        # Check common history file locations
-        possible_files = [
-            os.environ.get("HISTFILE"),  # User's custom HISTFILE
-            Path.home() / ".bash_history",
-            Path.home() / ".zsh_history",
-            Path.home() / ".history",
-        ]
-
-        for hist_file in possible_files:
-            if hist_file and Path(hist_file).exists():
-                history_file = Path(hist_file)
-                break
-
-        if not history_file:
-            console.print("[red]Error:[/red] Could not find shell history file")
-            console.print(
-                "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
-            )
-            console.print(
-                "[blue]Info:[/blue] Looked for: ~/.bash_history, ~/.zsh_history, ~/.history"
-            )
-            return
-
-        # Read last lines from history file
-        try:
-            with history_file.open(encoding="utf-8", errors="ignore") as f:
-                all_lines = f.readlines()
-        except Exception as e:
-            console.print(f"[red]Error reading history file:[/red] {e}")
-            console.print(
-                "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
-            )
-            return
-
-        if not all_lines:
-            console.print("[red]Error:[/red] History file is empty")
-            return
-
-        # Get last N non-empty lines
+        # Determine which shell we're using
+        shell = os.environ.get("SHELL", "")
         recent_lines = []
-        for line in reversed(all_lines):
-            cleaned_line = line.strip()
-            if cleaned_line and not cleaned_line.startswith(
-                "#"
-            ):  # Skip comments and empty lines
-                # Handle zsh extended history format: : 1234567890:0;command
-                if cleaned_line.startswith(": ") and ";" in cleaned_line:
-                    cleaned_line = cleaned_line.split(";", 1)[1]
-                recent_lines.append(cleaned_line)
-                if (
-                    len(recent_lines) >= lines + 10
-                ):  # Get extra to filter pypet commands
+
+        # Strategy 1: Try to read from shell's in-memory history (works in interactive shells)
+        # This is more reliable for getting the most recent commands
+        if "bash" in shell:
+            try:
+                # Use HISTFILE or default to ~/.bash_history
+                histfile = os.environ.get(
+                    "HISTFILE", str(Path.home() / ".bash_history")
+                )
+
+                # Run bash with -i (interactive) to access history builtin
+                # Use 'history -a' to append current session history to file first
+                # Then read a generous number of lines to ensure we get enough
+                result = subprocess.run(
+                    [
+                        "bash",
+                        "-i",
+                        "-c",
+                        f"history -a 2>/dev/null; history {lines + 50}",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                    check=False,
+                    env={**os.environ, "HISTFILE": histfile},
+                )
+
+                if result.returncode == 0 and result.stdout:
+                    # Parse bash history output format: "  123  command here"
+                    for line in result.stdout.strip().split("\n"):
+                        # Remove leading line numbers and whitespace
+                        parts = line.strip().split(None, 1)
+                        if len(parts) >= 2 and parts[0].isdigit():
+                            cmd = parts[1].strip()
+                            if cmd:
+                                recent_lines.append(cmd)
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+                # Fall back to file reading if shell history command fails
+                pass
+
+        elif "zsh" in shell:
+            try:
+                # Use HISTFILE or default to ~/.zsh_history
+                histfile = os.environ.get("HISTFILE", str(Path.home() / ".zsh_history"))
+
+                # Run zsh with -i (interactive) to access fc builtin
+                # fc -l lists history, -n suppresses line numbers, negative number for last N lines
+                result = subprocess.run(
+                    ["zsh", "-i", "-c", f"fc -W 2>/dev/null; fc -ln -{lines + 50}"],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                    check=False,
+                    env={**os.environ, "HISTFILE": histfile},
+                )
+
+                if result.returncode == 0 and result.stdout:
+                    for line in result.stdout.strip().split("\n"):
+                        cmd = line.strip()
+                        if cmd:
+                            recent_lines.append(cmd)
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+                # Fall back to file reading
+                pass
+
+        # Strategy 2: Fall back to reading from history file directly
+        if not recent_lines:
+            history_file = None
+
+            # Check common history file locations
+            possible_files = [
+                os.environ.get("HISTFILE"),  # User's custom HISTFILE
+                Path.home() / ".bash_history",
+                Path.home() / ".zsh_history",
+                Path.home() / ".history",
+            ]
+
+            for hist_file in possible_files:
+                if hist_file and Path(hist_file).exists():
+                    history_file = Path(hist_file)
                     break
+
+            if not history_file:
+                console.print("[red]Error:[/red] Could not find shell history file")
+                console.print(
+                    "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
+                )
+                console.print(
+                    "[blue]Info:[/blue] Looked for: ~/.bash_history, ~/.zsh_history, ~/.history"
+                )
+                return
+
+            # Read last lines from history file
+            try:
+                with history_file.open(encoding="utf-8", errors="ignore") as f:
+                    all_lines = f.readlines()
+            except Exception as e:
+                console.print(f"[red]Error reading history file:[/red] {e}")
+                console.print(
+                    "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
+                )
+                return
+
+            if not all_lines:
+                console.print("[red]Error:[/red] History file is empty")
+                return
+
+            # Get last N non-empty lines
+            for line in reversed(all_lines):
+                cleaned_line = line.strip()
+                if cleaned_line and not cleaned_line.startswith(
+                    "#"
+                ):  # Skip comments and empty lines
+                    # Handle zsh extended history format: : 1234567890:0;command
+                    if cleaned_line.startswith(": ") and ";" in cleaned_line:
+                        cleaned_line = cleaned_line.split(";", 1)[1]
+                    recent_lines.append(cleaned_line)
+                    if (
+                        len(recent_lines) >= lines + 50
+                    ):  # Get extra to filter pypet commands
+                        break
 
         if not recent_lines:
             console.print("[red]Error:[/red] No commands found in history")
