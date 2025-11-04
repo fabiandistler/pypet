@@ -270,7 +270,9 @@ def save_last(
         recent_lines = []
         for line in reversed(all_lines):
             cleaned_line = line.strip()
-            if cleaned_line and not cleaned_line.startswith("#"):  # Skip comments and empty lines
+            if cleaned_line and not cleaned_line.startswith(
+                "#"
+            ):  # Skip comments and empty lines
                 # Handle zsh extended history format: : 1234567890:0;command
                 if cleaned_line.startswith(": ") and ";" in cleaned_line:
                     cleaned_line = cleaned_line.split(";", 1)[1]

@@ -289,7 +289,12 @@ class SyncManager:
         success = True
 
         # Auto-commit if requested and there are changes
-        if auto_commit and self.repo and self.repo.is_dirty() and not self.commit_changes(commit_message):
+        if (
+            auto_commit
+            and self.repo
+            and self.repo.is_dirty()
+            and not self.commit_changes(commit_message)
+        ):
             success = False
 
         # Pull changes

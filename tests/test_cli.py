@@ -249,7 +249,9 @@ def test_edit_file_option(runner, mock_storage):
         result = runner.invoke(main, ["edit", "--file"])
         assert result.exit_code == 0
         assert "Opened" in result.output
-        mock_run.assert_called_once_with(["vim", str(mock_storage.config_path)], check=False)
+        mock_run.assert_called_once_with(
+            ["vim", str(mock_storage.config_path)], check=False
+        )
 
 
 def test_edit_no_args_error(runner, mock_storage):
