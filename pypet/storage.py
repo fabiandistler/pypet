@@ -31,16 +31,20 @@ class Storage:
             return {
                 snippet_id: snippet_data for snippet_id, snippet_data in data.items()
             }
-        except Exception:
+        except (toml.TomlDecodeError, OSError) as e:
+            # Log error but return empty dict to allow graceful degradation
+            import sys
+
+            print(
+                f"Warning: Failed to load snippets from {self.config_path}: {e}",
+                file=sys.stderr,
+            )
             return {}
 
     def _save_snippets(self, snippets: Dict[str, dict]) -> None:
         """Save snippets to TOML file."""
         with open(self.config_path, "w", encoding="utf-8") as f:
-            try:
-                toml.dump(snippets, f)
-            except Exception:
-                raise
+            toml.dump(snippets, f)
 
     def add_snippet(
         self,
