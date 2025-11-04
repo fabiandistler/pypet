@@ -1,6 +1,7 @@
 """Test cases for the CLI interface"""
 
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
+
 import pytest
 from click.testing import CliRunner
 
@@ -167,41 +168,47 @@ def test_edit_command(runner, mock_storage):
 
 def test_save_clipboard_command(runner, mock_storage):
     """Test saving from clipboard."""
-    with patch("pypet.cli.storage", mock_storage):
-        with patch("pypet.cli.pyperclip.paste", return_value="git status"):
-            with patch("pypet.cli.Confirm.ask", return_value=True):
-                with patch("pypet.cli.Prompt.ask", return_value="Git status check"):
-                    result = runner.invoke(main, ["save-clipboard"])
-                    assert result.exit_code == 0
-                    assert "Added new snippet with ID" in result.output
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.pyperclip.paste", return_value="git status"),
+        patch("pypet.cli.Confirm.ask", return_value=True),
+        patch("pypet.cli.Prompt.ask", return_value="Git status check"),
+    ):
+        result = runner.invoke(main, ["save-clipboard"])
+        assert result.exit_code == 0
+        assert "Added new snippet with ID" in result.output
 
 
 def test_save_clipboard_empty(runner, mock_storage):
     """Test saving from empty clipboard."""
-    with patch("pypet.cli.storage", mock_storage):
-        with patch("pypet.cli.pyperclip.paste", return_value=""):
-            result = runner.invoke(main, ["save-clipboard"])
-            assert result.exit_code == 0
-            assert "Clipboard is empty" in result.output
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.pyperclip.paste", return_value=""),
+    ):
+        result = runner.invoke(main, ["save-clipboard"])
+        assert result.exit_code == 0
+        assert "Clipboard is empty" in result.output
 
 
 def test_save_clipboard_with_options(runner, mock_storage):
     """Test saving from clipboard with description and tags."""
-    with patch("pypet.cli.storage", mock_storage):
-        with patch("pypet.cli.pyperclip.paste", return_value="docker ps"):
-            with patch("pypet.cli.Confirm.ask", return_value=True):
-                result = runner.invoke(
-                    main,
-                    [
-                        "save-clipboard",
-                        "--description",
-                        "List Docker containers",
-                        "--tags",
-                        "docker,containers",
-                    ],
-                )
-                assert result.exit_code == 0
-                assert "Added new snippet with ID" in result.output
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.pyperclip.paste", return_value="docker ps"),
+        patch("pypet.cli.Confirm.ask", return_value=True),
+    ):
+        result = runner.invoke(
+            main,
+            [
+                "save-clipboard",
+                "--description",
+                "List Docker containers",
+                "--tags",
+                "docker,containers",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Added new snippet with ID" in result.output
 
 
 def test_save_last_command(runner, mock_storage):
@@ -209,36 +216,42 @@ def test_save_last_command(runner, mock_storage):
     # Mock a history file with some commands
     history_content = "ls -la\ngit status\npypet list\necho hello\n"
 
-    with patch("pypet.cli.storage", mock_storage):
-        # Mock finding a history file and reading it
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("builtins.open", mock_open(read_data=history_content)):
-                with patch("pypet.cli.Confirm.ask", return_value=True):
-                    with patch("pypet.cli.Prompt.ask", return_value="List files"):
-                        result = runner.invoke(main, ["save-last"])
-                        assert result.exit_code == 0
-                        assert "Added new snippet with ID" in result.output
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pathlib.Path.open", mock_open(read_data=history_content)),
+        patch("pypet.cli.Confirm.ask", return_value=True),
+        patch("pypet.cli.Prompt.ask", return_value="List files"),
+    ):
+        result = runner.invoke(main, ["save-last"])
+        assert result.exit_code == 0
+        assert "Added new snippet with ID" in result.output
 
 
 def test_save_last_no_history(runner, mock_storage):
     """Test saving from history when no history available."""
-    with patch("pypet.cli.storage", mock_storage):
-        # Mock no history file found
-        with patch("pathlib.Path.exists", return_value=False):
-            result = runner.invoke(main, ["save-last"])
-            assert result.exit_code == 0
-            assert "Could not find shell history file" in result.output
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pathlib.Path.exists", return_value=False),
+    ):
+        result = runner.invoke(main, ["save-last"])
+        assert result.exit_code == 0
+        assert "Could not find shell history file" in result.output
 
 
 def test_edit_file_option(runner, mock_storage):
     """Test editing with --file option."""
-    with patch("pypet.cli.storage", mock_storage):
-        with patch("pypet.cli.subprocess.run") as mock_run:
-            with patch.dict("os.environ", {"EDITOR": "vim"}):
-                result = runner.invoke(main, ["edit", "--file"])
-                assert result.exit_code == 0
-                assert "Opened" in result.output
-                mock_run.assert_called_once_with(["vim", str(mock_storage.config_path)])
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.subprocess.run") as mock_run,
+        patch.dict("os.environ", {"EDITOR": "vim"}),
+    ):
+        result = runner.invoke(main, ["edit", "--file"])
+        assert result.exit_code == 0
+        assert "Opened" in result.output
+        mock_run.assert_called_once_with(
+            ["vim", str(mock_storage.config_path)], check=False
+        )
 
 
 def test_edit_no_args_error(runner, mock_storage):

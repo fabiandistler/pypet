@@ -1,7 +1,8 @@
 """Test cases for sync CLI commands"""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
 
 from pypet.cli import main
@@ -224,8 +225,6 @@ def test_sync_remote_update(runner):
         result = runner.invoke(
             main, ["sync", "remote", "https://github.com/test/new-repo.git"]
         )
-        if result.exit_code != 0:
-            print(f"Error output: {result.output}")
         assert result.exit_code == 0
         assert "Updated remote 'origin'" in result.output
         mock_remote.set_url.assert_called_once_with(

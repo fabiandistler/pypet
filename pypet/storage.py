@@ -2,12 +2,14 @@
 Storage management for pypet snippets using TOML files
 """
 
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+
 import toml
 
-from .models import Snippet, Parameter
+from .models import Parameter, Snippet
+
 
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "pypet" / "snippets.toml"
 
@@ -15,43 +17,39 @@ DEFAULT_CONFIG_PATH = Path.home() / ".config" / "pypet" / "snippets.toml"
 class Storage:
     """Manages snippet storage in TOML format."""
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         """Initialize storage with optional custom path."""
         self.config_path = config_path or DEFAULT_CONFIG_PATH
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
         if not self.config_path.exists():
             self._save_snippets({})
 
-    def _load_snippets(self) -> Dict[str, dict]:
+    def _load_snippets(self) -> dict[str, dict]:
         """Load snippets from TOML file."""
         if not self.config_path.exists():
             return {}
         try:
             data = toml.load(self.config_path)
-            return {
-                snippet_id: snippet_data for snippet_id, snippet_data in data.items()
-            }
+            return dict(data.items())
         except (toml.TomlDecodeError, OSError) as e:
             # Log error but return empty dict to allow graceful degradation
-            import sys
-
             print(
                 f"Warning: Failed to load snippets from {self.config_path}: {e}",
                 file=sys.stderr,
             )
             return {}
 
-    def _save_snippets(self, snippets: Dict[str, dict]) -> None:
+    def _save_snippets(self, snippets: dict[str, dict]) -> None:
         """Save snippets to TOML file."""
-        with open(self.config_path, "w", encoding="utf-8") as f:
+        with self.config_path.open("w", encoding="utf-8") as f:
             toml.dump(snippets, f)
 
     def add_snippet(
         self,
         command: str,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        parameters: Optional[Dict[str, Parameter]] = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        parameters: dict[str, Parameter] | None = None,
     ) -> str:
         """Add a new snippet and return its ID.
 
@@ -79,19 +77,19 @@ class Storage:
         self._save_snippets(snippets)
         return snippet_id
 
-    def get_snippet(self, snippet_id: str) -> Optional[Snippet]:
+    def get_snippet(self, snippet_id: str) -> Snippet | None:
         """Get a snippet by its ID."""
         snippets = self._load_snippets()
         if snippet_id not in snippets:
             return None
         return Snippet.from_dict(snippets[snippet_id])
 
-    def list_snippets(self) -> List[tuple[str, Snippet]]:
+    def list_snippets(self) -> list[tuple[str, Snippet]]:
         """List all snippets with their IDs."""
         snippets = self._load_snippets()
         return [(id_, Snippet.from_dict(data)) for id_, data in snippets.items()]
 
-    def search_snippets(self, query: str) -> List[tuple[str, Snippet]]:
+    def search_snippets(self, query: str) -> list[tuple[str, Snippet]]:
         """Search snippets by command, description, tags, or parameter names."""
         query = query.lower()
         results = []
@@ -117,10 +115,10 @@ class Storage:
     def update_snippet(
         self,
         snippet_id: str,
-        command: Optional[str] = None,
-        description: Optional[str] = None,
-        tags: Optional[List[str]] = None,
-        parameters: Optional[Dict[str, Parameter]] = None,
+        command: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        parameters: dict[str, Parameter] | None = None,
     ) -> bool:
         """Update an existing snippet. Returns True if successful."""
         snippets = self._load_snippets()

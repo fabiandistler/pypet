@@ -5,7 +5,6 @@ Data models for pypet snippets
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Optional, List, Dict
 
 
 @dataclass
@@ -13,8 +12,8 @@ class Parameter:
     """A parameter for a command-line snippet."""
 
     name: str
-    default: Optional[str] = None
-    description: Optional[str] = None
+    default: str | None = None
+    description: str | None = None
 
     def __post_init__(self):
         """Normalize parameter attributes."""
@@ -45,11 +44,11 @@ class Snippet:
     """A command-line snippet with metadata."""
 
     command: str
-    description: Optional[str] = None
-    tags: Optional[List[str]] = None
-    parameters: Optional[Dict[str, Parameter]] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    description: str | None = None
+    tags: list[str] | None = None
+    parameters: dict[str, Parameter] | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def __post_init__(self):
         """Initialize default values and normalize inputs."""
@@ -119,7 +118,7 @@ class Snippet:
             ),
         )
 
-    def apply_parameters(self, params: Optional[Dict[str, str]] = None) -> str:
+    def apply_parameters(self, params: dict[str, str] | None = None) -> str:
         """
         Apply parameter values to the command string.
 
@@ -155,7 +154,7 @@ class Snippet:
 
         return result
 
-    def get_all_parameters(self) -> Dict[str, Parameter]:
+    def get_all_parameters(self) -> dict[str, Parameter]:
         """
         Get all parameters for this snippet, including both formally defined ones
         and those discovered from command placeholders.
