@@ -2,26 +2,28 @@
 Command-line interface for pypet
 """
 
-from typing import Dict, Optional
-from datetime import datetime
 import os
 import subprocess
+from datetime import datetime
+from pathlib import Path
+
 import click
 import pyperclip
 from rich.console import Console
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
-from rich.prompt import Prompt, Confirm
 
 from .models import Parameter, Snippet
 from .storage import Storage
 from .sync import SyncManager
+
 
 console = Console()
 storage = Storage()
 sync_manager = SyncManager(storage.config_path)
 
 
-def _format_parameters(snippet: Optional[Snippet]) -> str:
+def _format_parameters(snippet: Snippet | None) -> str:
     """Format parameters for display in table."""
     if not snippet:
         return ""
@@ -37,7 +39,7 @@ def _format_parameters(snippet: Optional[Snippet]) -> str:
     )
 
 
-def _parse_parameters(param_str: str) -> Dict[str, Parameter]:
+def _parse_parameters(param_str: str) -> dict[str, Parameter]:
     """Parse parameter string into Parameter objects.
 
     Format: name[=default][:description],name[=default][:description],...
@@ -68,8 +70,8 @@ def _parse_parameters(param_str: str) -> Dict[str, Parameter]:
 
 
 def _prompt_for_parameters(
-    snippet: Snippet, provided_params: Optional[Dict[str, str]] = None
-) -> Dict[str, str]:
+    snippet: Snippet, provided_params: dict[str, str] | None = None
+) -> dict[str, str]:
     """Prompt user for parameter values that weren't already provided."""
     provided_params = provided_params or {}
     all_parameters = snippet.get_all_parameters()
@@ -137,9 +139,9 @@ def list_snippets():
 )
 def new(
     command: str,
-    description: Optional[str] = None,
-    tags: Optional[str] = None,
-    params: Optional[str] = None,
+    description: str | None = None,
+    tags: str | None = None,
+    params: str | None = None,
 ):
     """Create a new snippet."""
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
@@ -163,9 +165,9 @@ def new(
     help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
 )
 def save_clipboard(
-    description: Optional[str] = None,
-    tags: Optional[str] = None,
-    params: Optional[str] = None,
+    description: str | None = None,
+    tags: str | None = None,
+    params: str | None = None,
 ):
     """Save current clipboard content as a snippet."""
     try:
@@ -216,15 +218,12 @@ def save_clipboard(
     "--lines", "-n", default=1, help="Number of history lines to show (default: 1)"
 )
 def save_last(
-    description: Optional[str] = None,
-    tags: Optional[str] = None,
-    params: Optional[str] = None,
+    description: str | None = None,
+    tags: str | None = None,
+    params: str | None = None,
     lines: int = 1,
 ):
     """Save the last command(s) from shell history as a snippet."""
-    import os
-    from pathlib import Path
-
     try:
         # Try to read from history file directly (more reliable than history builtin)
         history_file = None
@@ -254,7 +253,7 @@ def save_last(
 
         # Read last lines from history file
         try:
-            with open(history_file, "r", encoding="utf-8", errors="ignore") as f:
+            with history_file.open(encoding="utf-8", errors="ignore") as f:
                 all_lines = f.readlines()
         except Exception as e:
             console.print(f"[red]Error reading history file:[/red] {e}")
@@ -270,12 +269,12 @@ def save_last(
         # Get last N non-empty lines
         recent_lines = []
         for line in reversed(all_lines):
-            line = line.strip()
-            if line and not line.startswith("#"):  # Skip comments and empty lines
+            cleaned_line = line.strip()
+            if cleaned_line and not cleaned_line.startswith("#"):  # Skip comments and empty lines
                 # Handle zsh extended history format: : 1234567890:0;command
-                if line.startswith(": ") and ";" in line:
-                    line = line.split(";", 1)[1]
-                recent_lines.append(line)
+                if cleaned_line.startswith(": ") and ";" in cleaned_line:
+                    cleaned_line = cleaned_line.split(";", 1)[1]
+                recent_lines.append(cleaned_line)
                 if (
                     len(recent_lines) >= lines + 10
                 ):  # Get extra to filter pypet commands
@@ -393,11 +392,11 @@ def delete(snippet_id: str):
     "--file", "-f", "edit_file", is_flag=True, help="Open TOML file directly in editor"
 )
 def edit(
-    snippet_id: Optional[str] = None,
-    command: Optional[str] = None,
-    description: Optional[str] = None,
-    tags: Optional[str] = None,
-    params: Optional[str] = None,
+    snippet_id: str | None = None,
+    command: str | None = None,
+    description: str | None = None,
+    tags: str | None = None,
+    params: str | None = None,
     edit_file: bool = False,
 ):
     """Edit an existing snippet or open TOML file directly."""
@@ -414,7 +413,7 @@ def edit(
             return
 
         try:
-            subprocess.run([editor, str(storage.config_path)])
+            subprocess.run([editor, str(storage.config_path)], check=False)
             console.print(f"[green]✓ Opened {storage.config_path} in {editor}[/green]")
         except FileNotFoundError:
             console.print(
@@ -486,7 +485,7 @@ def edit(
     help="Parameter values in name=value format. Can be specified multiple times.",
 )
 def copy(
-    snippet_id: Optional[str] = None,
+    snippet_id: str | None = None,
     param: tuple[str, ...] = (),
 ):
     """Copy a snippet to clipboard. If no snippet ID is provided, shows an interactive selection."""
@@ -567,7 +566,7 @@ def copy(
         try:
             final_command = selected_snippet.apply_parameters(param_values)
         except ValueError as e:
-            console.print(f"[red]Error:[/red] {str(e)}")
+            console.print(f"[red]Error:[/red] {e!s}")
             return
 
         # Copy to clipboard
@@ -575,7 +574,7 @@ def copy(
             pyperclip.copy(final_command)
             console.print(f"[green]✓ Copied to clipboard:[/green] {final_command}")
         except Exception as e:
-            console.print(f"[red]Failed to copy to clipboard:[/red] {str(e)}")
+            console.print(f"[red]Failed to copy to clipboard:[/red] {e!s}")
             console.print(f"[yellow]Command:[/yellow] {final_command}")
 
     except KeyboardInterrupt:
@@ -598,7 +597,7 @@ def copy(
     help="Parameter values in name=value format. Can be specified multiple times.",
 )
 def exec(
-    snippet_id: Optional[str] = None,
+    snippet_id: str | None = None,
     print_only: bool = False,
     edit: bool = False,
     copy: bool = False,
@@ -682,7 +681,7 @@ def exec(
         try:
             final_command = selected_snippet.apply_parameters(param_values)
         except ValueError as e:
-            console.print(f"[red]Error:[/red] {str(e)}")
+            console.print(f"[red]Error:[/red] {e!s}")
             return
 
         if edit:
@@ -704,7 +703,7 @@ def exec(
                 pyperclip.copy(final_command)
                 console.print(f"[green]✓ Copied to clipboard:[/green] {final_command}")
             except Exception as e:
-                console.print(f"[red]Failed to copy to clipboard:[/red] {str(e)}")
+                console.print(f"[red]Failed to copy to clipboard:[/red] {e!s}")
                 console.print(f"[yellow]Command:[/yellow] {final_command}")
         else:
             # Check for potentially dangerous patterns
@@ -728,8 +727,6 @@ def exec(
                 console.print("[yellow]Command execution cancelled[/yellow]")
                 return
 
-            import subprocess
-
             try:
                 # Note: shell=True is required for pypet's use case of executing shell commands
                 # with pipes, redirects, etc. User confirmation is required before execution.
@@ -739,7 +736,7 @@ def exec(
                     f"[red]Command failed with exit code {e.returncode}[/red]"
                 )
             except Exception as e:
-                console.print(f"[red]Error executing command:[/red] {str(e)}")
+                console.print(f"[red]Error executing command:[/red] {e!s}")
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Operation cancelled[/yellow]")
@@ -753,7 +750,7 @@ def sync():
 
 @sync.command()
 @click.option("--remote", "-r", help="Remote repository URL")
-def init(remote: Optional[str] = None):
+def init(remote: str | None = None):
     """Initialize Git repository for snippet synchronization."""
     if not sync_manager.git_available:
         console.print(
@@ -791,7 +788,7 @@ def status():
 
 @sync.command()
 @click.option("--message", "-m", help="Commit message")
-def commit(message: Optional[str] = None):
+def commit(message: str | None = None):
     """Commit current snippet changes to Git."""
     if sync_manager.commit_changes(message):
         console.print("[green]Changes committed successfully[/green]")
@@ -820,7 +817,7 @@ def push():
 @sync.command("sync")
 @click.option("--no-commit", is_flag=True, help="Skip auto-commit before sync")
 @click.option("--message", "-m", help="Commit message for auto-commit")
-def sync_all(no_commit: bool = False, message: Optional[str] = None):
+def sync_all(no_commit: bool = False, message: str | None = None):
     """Perform full synchronization: commit, pull, and push."""
     auto_commit = not no_commit
     if sync_manager.sync(auto_commit=auto_commit, commit_message=message):

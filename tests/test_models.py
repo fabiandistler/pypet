@@ -1,8 +1,10 @@
 """Test cases for the Snippet model"""
 
 from datetime import datetime, timezone
+
 import pytest
-from pypet.models import Snippet, Parameter
+
+from pypet.models import Parameter, Snippet
 
 
 def test_snippet_creation():

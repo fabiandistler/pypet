@@ -1,7 +1,9 @@
 """Test cases for the Storage system"""
 
 import sys
+
 import pytest
+
 from pypet.storage import Storage
 
 
@@ -48,7 +50,7 @@ def test_list_snippets(temp_storage):
     assert len(snippets) == 2
 
     # Convert to dict for easier comparison
-    snippet_dict = {id: snippet for id, snippet in snippets}
+    snippet_dict = dict(snippets)
 
     assert snippet_dict[id1].command == "cmd1"
     assert snippet_dict[id2].command == "cmd2"

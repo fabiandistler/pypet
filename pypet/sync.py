@@ -2,19 +2,20 @@
 Git synchronization functionality for pypet snippets
 """
 
+import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Dict, List
-import shutil
+
 
 try:
-    from git import Repo, InvalidGitRepositoryError
+    from git import InvalidGitRepositoryError, Repo
 
     GIT_AVAILABLE = True
 except ImportError:
     GIT_AVAILABLE = False
 
 from rich.console import Console
+
 
 console = Console()
 
@@ -26,7 +27,7 @@ class SyncManager:
         """Initialize sync manager with config path."""
         self.config_path = config_path
         self.config_dir = config_path.parent
-        self._repo: Optional[Repo] = None
+        self._repo: Repo | None = None
 
     @property
     def git_available(self) -> bool:
@@ -34,7 +35,7 @@ class SyncManager:
         return GIT_AVAILABLE
 
     @property
-    def repo(self) -> Optional[Repo]:
+    def repo(self) -> Repo | None:
         """Get Git repository if available."""
         if not self.git_available:
             return None
@@ -52,7 +53,7 @@ class SyncManager:
         """Check if config directory is in a Git repository."""
         return self.repo is not None
 
-    def init_git_repo(self, remote_url: Optional[str] = None) -> bool:
+    def init_git_repo(self, remote_url: str | None = None) -> bool:
         """Initialize Git repository in config directory."""
         if not self.git_available:
             console.print("[red]Git is not available[/red]")
@@ -80,7 +81,7 @@ class SyncManager:
             console.print(f"[red]Failed to initialize Git repository: {e}[/red]")
             return False
 
-    def get_status(self) -> Dict[str, str]:
+    def get_status(self) -> dict[str, str]:
         """Get sync status information."""
         status = {
             "git_available": str(self.git_available),
@@ -108,7 +109,7 @@ class SyncManager:
 
         return status
 
-    def create_backup(self) -> Optional[Path]:
+    def create_backup(self) -> Path | None:
         """Create backup of snippets file."""
         if not self.config_path.exists():
             return None
@@ -123,7 +124,7 @@ class SyncManager:
             console.print(f"[red]Failed to create backup: {e}[/red]")
             return None
 
-    def commit_changes(self, message: Optional[str] = None) -> bool:
+    def commit_changes(self, message: str | None = None) -> bool:
         """Commit current changes to Git."""
         if not self.is_git_repo or not self.repo:
             console.print("[red]Not in a Git repository[/red]")
@@ -206,8 +207,7 @@ class SyncManager:
                         "[blue]This is normal for first push. Skipping pull.[/blue]"
                     )
                     return True
-                else:
-                    raise fetch_error
+                raise fetch_error
 
         except Exception as e:
             console.print(f"[red]Failed to pull changes: {e}[/red]")
@@ -263,9 +263,7 @@ class SyncManager:
                 )
             return False
 
-    def sync(
-        self, auto_commit: bool = True, commit_message: Optional[str] = None
-    ) -> bool:
+    def sync(self, auto_commit: bool = True, commit_message: str | None = None) -> bool:
         """Perform full sync: commit, pull, push."""
         if not self.is_git_repo:
             console.print(
@@ -291,9 +289,8 @@ class SyncManager:
         success = True
 
         # Auto-commit if requested and there are changes
-        if auto_commit and self.repo and self.repo.is_dirty():
-            if not self.commit_changes(commit_message):
-                success = False
+        if auto_commit and self.repo and self.repo.is_dirty() and not self.commit_changes(commit_message):
+            success = False
 
         # Pull changes
         if not self.pull_changes():
@@ -312,7 +309,7 @@ class SyncManager:
 
         return success
 
-    def list_backups(self) -> List[Path]:
+    def list_backups(self) -> list[Path]:
         """List available backup files."""
         backup_pattern = "snippets_backup_*.toml"
         return sorted(self.config_dir.glob(backup_pattern), reverse=True)
