@@ -219,7 +219,7 @@ def test_save_last_command(runner, mock_storage):
     with (
         patch("pypet.cli.storage", mock_storage),
         patch("pathlib.Path.exists", return_value=True),
-        patch("builtins.open", mock_open(read_data=history_content)),
+        patch("pathlib.Path.open", mock_open(read_data=history_content)),
         patch("pypet.cli.Confirm.ask", return_value=True),
         patch("pypet.cli.Prompt.ask", return_value="List files"),
     ):
