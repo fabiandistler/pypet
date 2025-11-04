@@ -12,7 +12,7 @@ help:
 	@echo "  make lint        Run linting checks (ruff + black)"
 	@echo "  make format      Auto-format code with black and ruff"
 	@echo "  make type-check  Run type checking with mypy"
-	@echo "  make clean       Clean build artifacts"
+	@echo "  make clean       Clean build artifacts and cache files"
 	@echo "  make dev         Set up development environment"
 	@echo "  make all         Run all checks (format + lint + test)"
 	@echo ""
@@ -54,7 +54,7 @@ type-check:
 	@echo "🎯 Running mypy type checking..."
 	uv run python -m mypy pypet --ignore-missing-imports || true
 
-# Clean build artifacts
+# Clean build artifacts and cache files
 clean:
 	rm -rf build/
 	rm -rf dist/
@@ -62,6 +62,8 @@ clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete
+	rm -rf .pytest_cache
+	rm -rf .ruff_cache
 
 # Set up development environment
 dev: install hooks

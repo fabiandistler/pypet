@@ -38,3 +38,6 @@ ENV/
 .pypet.toml
 
 .claude/*
+
+# Serena AI assistant memories
+.serena/memories/
