@@ -60,9 +60,10 @@ This is a Python CLI tool (`pypet`) for managing command-line snippets, inspired
    - Thread-safe file operations with error handling
 
 3. **CLI (`pypet/cli.py`)**: Click-based command interface with Rich formatting
-   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`, `sync`
+   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`, `sync`, `save-clipboard`, `save-last`
    - Interactive execution with parameter prompting
    - **Clipboard integration** using pyperclip library
+   - **Shell history integration** for saving recent commands
    - **Git synchronization** with backup/restore functionality
    - Rich terminal tables and colored output
 
@@ -76,8 +77,10 @@ This is a Python CLI tool (`pypet`) for managing command-line snippets, inspired
 
 - **Parameterized Snippets**: Commands can contain placeholders like `{port}` or `{env=development}`
 - **Interactive Execution**: `pypet exec` without ID shows snippet selection table
-- **Clipboard Integration**: `pypet copy` command and `--copy` option for easy snippet sharing
+- **Clipboard Integration**: `pypet copy` command, `--copy` option, and `save-clipboard` command for easy snippet sharing
+- **Shell History Integration**: Save recent commands from shell history with `save-last` command
 - **Git Synchronization**: Full Git workflow with automatic backups and conflict resolution
+- **Automatic Backup Management**: Smart cleanup keeps only the 5 most recent backups
 - **Rich Terminal Output**: All commands use Rich library for formatted tables and colors
 - **TOML Storage**: Human-readable configuration format at `~/.config/pypet/snippets.toml`
 - **Comprehensive Search**: Search across commands, descriptions, tags, and parameter names
@@ -109,13 +112,22 @@ Parameters are defined with optional descriptions and are prompted for during in
 
 ## Recent Updates & Important Notes
 
-### v0.1.1 (2025-06-25) - Current Version
+### v0.2.0 (2025-06-26) - Current Version
+- **New `pypet save-clipboard` command** (Issue #8): Save clipboard content as snippets with automatic parameter detection
+- **New `pypet save-last` command** (Issue #8): Save command(s) from shell history (bash, zsh, etc.)
+- **Enhanced `pypet edit --file` option** (Issue #13): Open TOML configuration file directly in editor
+- **Automatic backup cleanup** (Issue #12): Smart management keeps only 5 most recent backups
+- **Pre-push git hooks**: Automatically run linting and tests before push
+- **Development Makefile**: Streamlined workflow with `make dev`, `make test`, `make all`, etc.
+- Updated to 80 total tests (expanded coverage for new features)
+
+### v0.1.1 (2025-06-25)
 - **Fixed Issue #10**: Git sync remote feature now works reliably
 - **Added `pypet sync remote <url>` command** for easy remote management
-- **Improved first-time sync**: Handles empty repositories automatically  
+- **Improved first-time sync**: Handles empty repositories automatically
 - **Auto-upstream setup**: Sets branch tracking on first push
 - **Enhanced error handling**: Clear guidance for common sync issues
-- Updated to 74 total tests
+- 74 total tests
 
 ### Development Workflow Notes
 - **Git Hooks**: Pre-push hooks automatically run linting and tests
