@@ -239,6 +239,34 @@ def test_save_last_no_history(runner, mock_storage):
         assert "Could not find shell history file" in result.output
 
 
+def test_save_last_zsh_extended_history(runner, mock_storage):
+    """Test saving from zsh extended history format."""
+    # Mock zsh extended history format: : timestamp:duration;command
+    # Note the space after semicolon which should be handled correctly
+    history_content = (
+        ": 1234567890:0;ls -la\n"
+        ": 1234567891:0; git status\n"  # Space after semicolon
+        ": 1234567892:0; pypet list\n"  # pypet command (should be filtered)
+        ": 1234567893:0;echo hello\n"
+        ": 1234567894:0; docker ps -a\n"  # Space after semicolon
+    )
+
+    with (
+        patch("pypet.cli.storage", mock_storage),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pathlib.Path.open", mock_open(read_data=history_content)),
+        patch("pypet.cli.Confirm.ask", return_value=True),
+        patch("pypet.cli.Prompt.ask", return_value="Docker command"),
+    ):
+        result = runner.invoke(main, ["save-last"])
+        assert result.exit_code == 0
+        assert "Added new snippet with ID" in result.output
+        # Verify the command was properly parsed (no leading space)
+        assert "docker ps -a" in result.output
+        # Verify pypet commands were filtered out
+        assert "pypet list" not in result.output
+
+
 def test_edit_file_option(runner, mock_storage):
     """Test editing with --file option."""
     with (

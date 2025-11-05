@@ -275,7 +275,7 @@ def save_last(
             ):  # Skip comments and empty lines
                 # Handle zsh extended history format: : 1234567890:0;command
                 if cleaned_line.startswith(": ") and ";" in cleaned_line:
-                    cleaned_line = cleaned_line.split(";", 1)[1]
+                    cleaned_line = cleaned_line.split(";", 1)[1].strip()
                 recent_lines.append(cleaned_line)
                 if (
                     len(recent_lines) >= lines + 10
