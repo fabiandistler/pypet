@@ -29,7 +29,7 @@ def mock_storage(tmp_path):
 
 def test_list_command(runner, mock_storage):
     """Test the list command."""
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         result = runner.invoke(main, ["list"])
         assert result.exit_code == 0
         assert "ls -la" in result.output
@@ -38,7 +38,7 @@ def test_list_command(runner, mock_storage):
 
 def test_new_command(runner, mock_storage):
     """Test adding a new snippet."""
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         result = runner.invoke(
             main, ["new", "echo 'test'", "-d", "Test command", "-t", "test,demo"]
         )
@@ -52,7 +52,7 @@ def test_exec_with_id(runner, mock_storage):
     snippet_id = snippets[0][0]  # Get ID of first snippet
 
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Confirm.ask", return_value=True),
         patch("subprocess.run") as mock_run,
     ):
@@ -64,7 +64,7 @@ def test_exec_with_id(runner, mock_storage):
 def test_exec_interactive_selection(runner, mock_storage):
     """Test executing a snippet through interactive selection."""
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Prompt.ask", return_value="1"),
         patch("rich.prompt.Confirm.ask", return_value=True),
         patch("subprocess.run") as mock_run,
@@ -80,7 +80,7 @@ def test_exec_with_edit(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("click.edit", return_value="ls -lah"),
         patch("subprocess.run") as mock_run,
         patch("rich.prompt.Confirm.ask", return_value=True),
@@ -98,7 +98,7 @@ def test_exec_cancel(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Confirm.ask", return_value=False),
         patch("subprocess.run") as mock_run,
     ):
@@ -110,7 +110,7 @@ def test_exec_cancel(runner, mock_storage):
 def test_exec_interactive_invalid_choice(runner, mock_storage):
     """Test invalid input in interactive selection."""
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
     ):
         result = runner.invoke(main, ["exec"])
@@ -120,7 +120,7 @@ def test_exec_interactive_invalid_choice(runner, mock_storage):
 
 def test_search_command(runner, mock_storage):
     """Test the search command with different criteria."""
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         # Search by command
         result = runner.invoke(main, ["search", "git"])
         assert result.exit_code == 0
@@ -142,7 +142,7 @@ def test_edit_command(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         result = runner.invoke(
             main,
             [
@@ -169,10 +169,10 @@ def test_edit_command(runner, mock_storage):
 def test_save_clipboard_command(runner, mock_storage):
     """Test saving from clipboard."""
     with (
-        patch("pypet.cli.storage", mock_storage),
-        patch("pypet.cli.pyperclip.paste", return_value="git status"),
-        patch("pypet.cli.Confirm.ask", return_value=True),
-        patch("pypet.cli.Prompt.ask", return_value="Git status check"),
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.save_commands.pyperclip.paste", return_value="git status"),
+        patch("pypet.cli.save_commands.Confirm.ask", return_value=True),
+        patch("pypet.cli.save_commands.Prompt.ask", return_value="Git status check"),
     ):
         result = runner.invoke(main, ["save-clipboard"])
         assert result.exit_code == 0
@@ -182,8 +182,8 @@ def test_save_clipboard_command(runner, mock_storage):
 def test_save_clipboard_empty(runner, mock_storage):
     """Test saving from empty clipboard."""
     with (
-        patch("pypet.cli.storage", mock_storage),
-        patch("pypet.cli.pyperclip.paste", return_value=""),
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.save_commands.pyperclip.paste", return_value=""),
     ):
         result = runner.invoke(main, ["save-clipboard"])
         assert result.exit_code == 0
@@ -193,9 +193,9 @@ def test_save_clipboard_empty(runner, mock_storage):
 def test_save_clipboard_with_options(runner, mock_storage):
     """Test saving from clipboard with description and tags."""
     with (
-        patch("pypet.cli.storage", mock_storage),
-        patch("pypet.cli.pyperclip.paste", return_value="docker ps"),
-        patch("pypet.cli.Confirm.ask", return_value=True),
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.save_commands.pyperclip.paste", return_value="docker ps"),
+        patch("pypet.cli.save_commands.Confirm.ask", return_value=True),
     ):
         result = runner.invoke(
             main,
@@ -217,11 +217,11 @@ def test_save_last_command(runner, mock_storage):
     history_content = "ls -la\ngit status\npypet list\necho hello\n"
 
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("pathlib.Path.exists", return_value=True),
         patch("pathlib.Path.open", mock_open(read_data=history_content)),
-        patch("pypet.cli.Confirm.ask", return_value=True),
-        patch("pypet.cli.Prompt.ask", return_value="List files"),
+        patch("pypet.cli.save_commands.Confirm.ask", return_value=True),
+        patch("pypet.cli.save_commands.Prompt.ask", return_value="List files"),
     ):
         result = runner.invoke(main, ["save-last"])
         assert result.exit_code == 0
@@ -231,7 +231,7 @@ def test_save_last_command(runner, mock_storage):
 def test_save_last_no_history(runner, mock_storage):
     """Test saving from history when no history available."""
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("pathlib.Path.exists", return_value=False),
     ):
         result = runner.invoke(main, ["save-last"])
@@ -242,8 +242,8 @@ def test_save_last_no_history(runner, mock_storage):
 def test_edit_file_option(runner, mock_storage):
     """Test editing with --file option."""
     with (
-        patch("pypet.cli.storage", mock_storage),
-        patch("pypet.cli.subprocess.run") as mock_run,
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.snippet_commands.subprocess.run") as mock_run,
         patch.dict("os.environ", {"EDITOR": "vim"}),
     ):
         result = runner.invoke(main, ["edit", "--file"])
@@ -256,7 +256,7 @@ def test_edit_file_option(runner, mock_storage):
 
 def test_edit_no_args_error(runner, mock_storage):
     """Test edit command with no arguments shows error."""
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         result = runner.invoke(main, ["edit"])
         assert result.exit_code == 0
         assert "Either provide a snippet ID or use --file" in result.output
@@ -267,7 +267,7 @@ def test_delete_command(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         # Test successful deletion
         result = runner.invoke(main, ["delete", snippet_id])
         assert result.exit_code == 0
@@ -290,7 +290,7 @@ def test_exec_special_characters(runner, mock_storage):
     )
 
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Confirm.ask", return_value=True),
         patch("subprocess.run") as mock_run,
     ):
@@ -304,7 +304,7 @@ def test_exec_special_characters(runner, mock_storage):
 def test_exec_interactive_invalid_input(runner, mock_storage):
     """Test interactive exec with invalid selection."""
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
     ):
         result = runner.invoke(main, ["exec"])
@@ -314,7 +314,7 @@ def test_exec_interactive_invalid_input(runner, mock_storage):
 
 def test_exec_snippet_not_found(runner, mock_storage):
     """Test executing a non-existent snippet."""
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         result = runner.invoke(main, ["exec", "non-existent-id"])
         assert result.exit_code == 1  # Click's error exit code
         assert "Snippet not found" in result.output
@@ -325,7 +325,10 @@ def test_copy_command(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch("pyperclip.copy") as mock_copy:
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pyperclip.copy") as mock_copy,
+    ):
         result = runner.invoke(main, ["copy", snippet_id])
         assert result.exit_code == 0
         mock_copy.assert_called_once_with("ls -la")
@@ -335,7 +338,7 @@ def test_copy_command(runner, mock_storage):
 def test_copy_interactive_selection(runner, mock_storage):
     """Test copying a snippet through interactive selection."""
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("rich.prompt.Prompt.ask", return_value="1"),
         patch("pyperclip.copy") as mock_copy,
     ):
@@ -347,7 +350,7 @@ def test_copy_interactive_selection(runner, mock_storage):
 
 def test_copy_snippet_not_found(runner, mock_storage):
     """Test copying a non-existent snippet."""
-    with patch("pypet.cli.storage", mock_storage):
+    with patch("pypet.cli.main_module.storage", mock_storage):
         result = runner.invoke(main, ["copy", "non-existent-id"])
         assert result.exit_code == 1
         assert "Snippet not found" in result.output
@@ -358,7 +361,10 @@ def test_exec_with_copy_option(runner, mock_storage):
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.storage", mock_storage), patch("pyperclip.copy") as mock_copy:
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pyperclip.copy") as mock_copy,
+    ):
         result = runner.invoke(main, ["exec", snippet_id, "--copy"])
         assert result.exit_code == 0
         mock_copy.assert_called_once_with("ls -la")
@@ -371,7 +377,7 @@ def test_copy_with_clipboard_error(runner, mock_storage):
     snippet_id = snippets[0][0]
 
     with (
-        patch("pypet.cli.storage", mock_storage),
+        patch("pypet.cli.main_module.storage", mock_storage),
         patch("pyperclip.copy", side_effect=Exception("Clipboard error")),
     ):
         result = runner.invoke(main, ["copy", snippet_id])
