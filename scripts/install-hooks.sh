@@ -83,21 +83,21 @@ if ! find pypet tests -name "*.py" -type f | head -1 | grep -q .; then
     exit 0
 fi
 
-# Run Black formatting check
-print_status "Running Black formatter check..."
-if ! uv run python -m black --check pypet tests; then
-    print_error "Black formatting check failed!"
-    print_warning "Run 'uv run python -m black pypet tests' to fix formatting"
+# Run Ruff formatting check
+print_status "Running Ruff formatter check..."
+if ! uv run ruff check --config pyproject.toml --fix .; then
+    print_error "Ruff formatting check failed!"
+    print_warning "Run 'uv run ruff check --config pyproject.toml --fix .' to fix formatting"
     exit 1
 else
-    print_success "Black formatting check passed ✨"
+    print_success "Ruff formatting check passed ✨"
 fi
 
 # Run Ruff linting check
 print_status "Running Ruff linting check..."
-if ! uv run python -m ruff check pypet tests; then
+if ! uv run ruff check --config pyproject.toml .; then
     print_error "Ruff linting check failed!"
-    print_warning "Run 'uv run python -m ruff check pypet tests --fix' to auto-fix issues"
+    print_warning "Run 'uv run ruff check --config pyproject.toml --fix .' to auto-fix issues"
     exit 1
 else
     print_success "Ruff linting check passed 🎯"
@@ -137,7 +137,7 @@ chmod +x "$HOOKS_DIR/pre-push"
 print_success "Pre-push hook installed successfully!"
 echo ""
 echo "The hook will now run before every 'git push' and check:"
-echo "  ✅ Black code formatting"
+echo "  ✅ Ruff code formatting"
 echo "  ✅ Ruff linting"
 echo "  ✅ Tests (can be skipped with SKIP_TESTS=1)"
 echo ""

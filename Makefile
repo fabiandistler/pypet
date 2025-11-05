@@ -9,8 +9,8 @@ help:
 	@echo "  make install     Install package in development mode"
 	@echo "  make hooks       Install pre-push git hooks" 
 	@echo "  make test        Run all tests"
-	@echo "  make lint        Run linting checks (ruff + black)"
-	@echo "  make format      Auto-format code with black and ruff"
+	@echo "  make lint        Run linting checks"
+	@echo "  make format      Auto-format code with ruff"
 	@echo "  make type-check  Run type checking with mypy"
 	@echo "  make clean       Clean build artifacts and cache files"
 	@echo "  make dev         Set up development environment"
@@ -37,17 +37,13 @@ test-quick:
 
 # Run linting checks
 lint:
-	@echo "🔍 Running Black formatter check..."
-	uv run python -m black --check pypet tests
 	@echo "🔍 Running Ruff linting check..."  
-	uv run python -m ruff check pypet tests
+	uv run ruff check --config pyproject.toml .
 
 # Auto-format code
 format:
-	@echo "✨ Formatting code with Black..."
-	uv run python -m black pypet tests
 	@echo "🔧 Auto-fixing with Ruff..."
-	uv run python -m ruff check pypet tests --fix
+	uv run ruff check --config pyproject.toml --fix .
 
 # Type checking
 type-check:
