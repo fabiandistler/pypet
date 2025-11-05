@@ -3,7 +3,9 @@
 import sys
 
 import pytest
+import toml
 
+from pypet.models import Parameter
 from pypet.storage import Storage
 
 
@@ -185,3 +187,58 @@ def test_file_permission_error(tmp_path):
     storage = Storage(config_path=storage_path)
     with pytest.raises(PermissionError):
         storage.add_snippet("test", "test")
+
+
+def test_no_empty_parameters_in_toml(temp_storage):
+    """Test that snippets without parameters don't have empty parameters section in TOML"""
+    # Add a snippet without parameters
+    snippet_id = temp_storage.add_snippet(
+        command="git status", description="Check git status", tags=["git"]
+    )
+
+    # Load the TOML file directly and check the structure
+    with temp_storage.config_path.open("r") as f:
+        toml_data = toml.load(f)
+
+    # Verify the snippet exists
+    assert snippet_id in toml_data
+
+    # Verify that parameters key is not present at all
+    assert "parameters" not in toml_data[snippet_id]
+
+    # Verify that other fields are present
+    assert toml_data[snippet_id]["command"] == "git status"
+    assert toml_data[snippet_id]["description"] == "Check git status"
+    assert toml_data[snippet_id]["tags"] == ["git"]
+
+
+def test_parameters_in_toml_when_present(temp_storage):
+    """Test that snippets with parameters DO have parameters section in TOML"""
+    # Add a snippet with parameters
+    params = {
+        "host": Parameter("host", description="Server host"),
+        "port": Parameter("port", default="22", description="SSH port"),
+    }
+    snippet_id = temp_storage.add_snippet(
+        command="ssh user@{host} -p {port}",
+        description="SSH connection",
+        tags=["ssh"],
+        parameters=params,
+    )
+
+    # Load the TOML file directly and check the structure
+    with temp_storage.config_path.open("r") as f:
+        toml_data = toml.load(f)
+
+    # Verify the snippet exists
+    assert snippet_id in toml_data
+
+    # Verify that parameters key IS present and has the correct structure
+    assert "parameters" in toml_data[snippet_id]
+    assert "host" in toml_data[snippet_id]["parameters"]
+    assert "port" in toml_data[snippet_id]["parameters"]
+
+    # Verify parameter details
+    assert toml_data[snippet_id]["parameters"]["host"]["name"] == "host"
+    assert toml_data[snippet_id]["parameters"]["host"]["description"] == "Server host"
+    assert toml_data[snippet_id]["parameters"]["port"]["default"] == "22"

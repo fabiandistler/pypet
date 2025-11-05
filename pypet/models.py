@@ -77,18 +77,21 @@ class Snippet:
 
     def to_dict(self) -> dict:
         """Convert snippet to dictionary for TOML storage."""
-        return {
+        result = {
             "command": self.command,
             "description": self.description,
             "tags": self.tags or [],
-            "parameters": (
-                {name: param.to_dict() for name, param in self.parameters.items()}
-                if self.parameters
-                else {}
-            ),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+        # Only include parameters if there are any
+        if self.parameters:
+            result["parameters"] = {
+                name: param.to_dict() for name, param in self.parameters.items()
+            }
+
+        return result
 
     @classmethod
     def from_dict(cls, data: dict) -> "Snippet":
