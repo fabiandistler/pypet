@@ -8,7 +8,7 @@ import click
 from rich.table import Table
 
 from . import main_module as cli_main
-from .main import main
+from .main import config, main
 
 
 @main.group()
@@ -207,3 +207,80 @@ def cleanup(keep: int, dry_run: bool) -> None:
         deleted_count = cli_main.sync_manager.cleanup_old_backups(keep)
         if deleted_count == 0:
             cli_main.console.print("[green]No backups were deleted.[/green]")
+
+
+@sync.group()
+def auto() -> None:
+    """Manage auto-sync settings."""
+    pass
+
+
+@auto.command()
+def enable() -> None:
+    """Enable auto-sync after snippet modifications."""
+    config.auto_sync = True
+    cli_main.console.print("[green]✓ Auto-sync enabled[/green]")
+    cli_main.console.print(
+        "[blue]Snippets will automatically sync after new/edit/delete operations[/blue]"
+    )
+
+    # Check if git is configured
+    if not cli_main.sync_manager.is_git_repo:
+        cli_main.console.print(
+            "\n[yellow]Note: Git repository not initialized.[/yellow]"
+        )
+        cli_main.console.print(
+            "[blue]Run 'pypet sync init' to set up Git synchronization.[/blue]"
+        )
+    elif not cli_main.sync_manager.repo or "origin" not in [
+        r.name for r in cli_main.sync_manager.repo.remotes
+    ]:
+        cli_main.console.print("\n[yellow]Note: No Git remote configured.[/yellow]")
+        cli_main.console.print(
+            "[blue]Run 'pypet sync remote <url>' to add a remote repository.[/blue]"
+        )
+
+
+@auto.command()
+def disable() -> None:
+    """Disable auto-sync."""
+    config.auto_sync = False
+    cli_main.console.print("[green]✓ Auto-sync disabled[/green]")
+    cli_main.console.print("[blue]You can manually sync using 'pypet sync sync'[/blue]")
+
+
+@auto.command("status")
+def auto_status() -> None:
+    """Show auto-sync status."""
+    is_enabled = config.auto_sync
+
+    table = Table(title="Auto-Sync Status")
+    table.add_column("Setting", style="blue")
+    table.add_column("Value", style="cyan")
+
+    status_text = "[green]Enabled[/green]" if is_enabled else "[red]Disabled[/red]"
+    table.add_row("Auto-sync", status_text)
+
+    # Add Git repo status
+    if cli_main.sync_manager.is_git_repo:
+        table.add_row("Git repository", "[green]Initialized[/green]")
+        if cli_main.sync_manager.repo and "origin" in [
+            r.name for r in cli_main.sync_manager.repo.remotes
+        ]:
+            table.add_row("Git remote", "[green]Configured[/green]")
+        else:
+            table.add_row("Git remote", "[red]Not configured[/red]")
+    else:
+        table.add_row("Git repository", "[red]Not initialized[/red]")
+
+    cli_main.console.print(table)
+
+    # Show helpful message
+    if is_enabled:
+        cli_main.console.print(
+            "\n[blue]Snippets will automatically sync after modifications[/blue]"
+        )
+    else:
+        cli_main.console.print(
+            "\n[blue]Run 'pypet sync auto enable' to enable auto-sync[/blue]"
+        )
