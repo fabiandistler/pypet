@@ -50,20 +50,22 @@ This is a Python CLI tool (`pypet`) for managing command-line snippets, inspired
 ### Core Components
 
 1. **Models (`pypet/models.py`)**: Defines `Snippet` and `Parameter` dataclasses
-   - `Snippet`: Represents a command with metadata (description, tags, parameters, timestamps)
+   - `Snippet`: Represents a command with metadata (description, tags, parameters, alias, timestamps)
    - `Parameter`: Represents customizable parameters within commands (with defaults and descriptions)
    - Both models support TOML serialization/deserialization
 
 2. **Storage (`pypet/storage.py`)**: Handles TOML-based persistence
    - Default storage location: `~/.config/pypet/snippets.toml`
    - Operations: add, get, list, search, update, delete snippets
+   - Support for alias management
    - Thread-safe file operations with error handling
 
-3. **CLI (`pypet/cli.py`)**: Click-based command interface with Rich formatting
-   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`, `sync`, `save-clipboard`, `save-last`
+3. **CLI (`pypet/cli/*.py`)**: Click-based command interface with Rich formatting (organized into modules)
+   - Commands: `new`, `list`, `search`, `edit`, `delete`, `exec`, `copy`, `sync`, `save-clipboard`, `save-last`, `alias`
    - Interactive execution with parameter prompting
    - **Clipboard integration** using pyperclip library
    - **Shell history integration** for saving recent commands
+   - **Shell alias management** for creating persistent bash/zsh aliases
    - **Git synchronization** with backup/restore functionality
    - Rich terminal tables and colored output
 
@@ -73,12 +75,19 @@ This is a Python CLI tool (`pypet`) for managing command-line snippets, inspired
    - Conflict-safe operations with backup/restore
    - Cross-platform Git integration using GitPython
 
+5. **Alias Manager (`pypet/alias_manager.py`)**: Shell alias management
+   - Generate alias definitions for snippets
+   - Manage `~/.config/pypet/aliases.sh` file
+   - Support for both simple aliases and parameterized functions
+   - Shell profile integration instructions
+
 ### Key Features
 
 - **Parameterized Snippets**: Commands can contain placeholders like `{port}` or `{env=development}`
 - **Interactive Execution**: `pypet exec` without ID shows snippet selection table
 - **Clipboard Integration**: `pypet copy` command, `--copy` option, and `save-clipboard` command for easy snippet sharing
 - **Shell History Integration**: Save recent commands from shell history with `save-last` command
+- **Shell Aliases**: Create persistent bash/zsh aliases from snippets, with automatic function generation for parameterized commands
 - **Git Synchronization**: Full Git workflow with automatic backups and conflict resolution
 - **Automatic Backup Management**: Smart cleanup keeps only the 5 most recent backups
 - **Rich Terminal Output**: All commands use Rich library for formatted tables and colors
@@ -93,6 +102,8 @@ Tests are organized by component:
 - `tests/test_cli.py`: Command-line interface using Click's testing utilities
 - `tests/test_sync.py`: Git synchronization functionality
 - `tests/test_sync_cli.py`: Sync command-line interface tests
+- `tests/test_alias.py`: Alias manager and storage integration tests
+- `tests/test_alias_cli.py`: Alias CLI command tests
 
 ### Parameter System
 
