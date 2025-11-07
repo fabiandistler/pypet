@@ -60,9 +60,7 @@ jobs:
           See [CHANGELOG.md](https://github.com/fabiandistler/pypet/blob/${{ github.ref_name }}/CHANGELOG.md) for details.
           
           ## Installation
-```bash
           pip install pypet==${{ steps.version.outputs.version }}
-```
           
           ## Assets
           
