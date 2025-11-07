@@ -263,21 +263,91 @@ def test_edit_no_args_error(runner, mock_storage):
 
 
 def test_delete_command(runner, mock_storage):
-    """Test deleting a snippet."""
+    """Test deleting a snippet with ID."""
     snippets = mock_storage.list_snippets()
     snippet_id = snippets[0][0]
 
-    with patch("pypet.cli.main_module.storage", mock_storage):
-        # Test successful deletion
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("rich.prompt.Confirm.ask", return_value=True),
+    ):
+        # Test successful deletion with confirmation
         result = runner.invoke(main, ["delete", snippet_id])
         assert result.exit_code == 0
         assert "Deleted snippet" in result.output
         assert mock_storage.get_snippet(snippet_id) is None
 
+    # Re-add the snippet for next test
+    mock_storage.add_snippet("ls -la", "List files", ["system"])
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("rich.prompt.Confirm.ask", return_value=True),
+    ):
         # Test deleting non-existent snippet
         result = runner.invoke(main, ["delete", "nonexistent"])
         assert result.exit_code == 0
         assert "Snippet not found" in result.output
+
+
+def test_delete_command_cancelled(runner, mock_storage):
+    """Test cancelling deletion with confirmation prompt."""
+    snippets = mock_storage.list_snippets()
+    snippet_id = snippets[0][0]
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("rich.prompt.Confirm.ask", return_value=False),
+    ):
+        result = runner.invoke(main, ["delete", snippet_id])
+        assert result.exit_code == 0
+        assert "Deletion cancelled" in result.output
+        # Verify snippet still exists
+        assert mock_storage.get_snippet(snippet_id) is not None
+
+
+def test_delete_interactive_selection(runner, mock_storage):
+    """Test deleting a snippet through interactive selection."""
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", return_value="1"),
+        patch("rich.prompt.Confirm.ask", return_value=True),
+    ):
+        result = runner.invoke(main, ["delete"])
+        assert result.exit_code == 0
+        assert "Deleted snippet" in result.output
+
+
+def test_delete_interactive_cancelled(runner, mock_storage):
+    """Test cancelling interactive delete."""
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", return_value="q"),
+    ):
+        result = runner.invoke(main, ["delete"])
+        assert result.exit_code == 0
+
+
+def test_delete_interactive_invalid_choice(runner, mock_storage):
+    """Test invalid input in interactive delete selection."""
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("rich.prompt.Prompt.ask", side_effect=["invalid", "q"]),
+    ):
+        result = runner.invoke(main, ["delete"])
+        assert result.exit_code == 0
+        assert "Please enter a number" in result.output
+
+
+def test_delete_interactive_no_snippets(runner, mock_storage):
+    """Test interactive delete when no snippets exist."""
+    # Create empty storage
+    empty_storage = Storage(config_path=mock_storage.config_path.parent / "empty.toml")
+
+    with patch("pypet.cli.main_module.storage", empty_storage):
+        result = runner.invoke(main, ["delete"])
+        assert result.exit_code == 0
+        assert "No snippets found" in result.output
 
 
 def test_exec_special_characters(runner, mock_storage):

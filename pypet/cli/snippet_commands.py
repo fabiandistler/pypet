@@ -6,6 +6,7 @@ import os
 import subprocess
 
 import click
+from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 from ..alias_manager import AliasManager
@@ -109,13 +110,95 @@ def search(query: str) -> None:
 
 
 @main.command()
-@click.argument("snippet_id")
-def delete(snippet_id: str) -> None:
-    """Delete a snippet."""
-    if cli_main.storage.delete_snippet(snippet_id):
-        cli_main.console.print(f"[green]Deleted snippet:[/green] {snippet_id}")
-    else:
-        cli_main.console.print(f"[red]Snippet not found:[/red] {snippet_id}")
+@click.argument("snippet_id", required=False)
+def delete(snippet_id: str | None = None) -> None:
+    """Delete a snippet. If no snippet ID is provided, shows an interactive selection."""
+    try:
+        selected_snippet_id = None
+        selected_snippet = None
+
+        if snippet_id is None:
+            # Show interactive snippet selection
+            snippets = cli_main.storage.list_snippets()
+            if not snippets:
+                cli_main.console.print(
+                    "[yellow]No snippets found.[/yellow] Add some with 'pypet new'"
+                )
+                return
+
+            # Display snippets table for selection
+            table = Table(title="Available Snippets")
+            table.add_column("Index", style="blue")
+            table.add_column("ID", style="cyan")
+            table.add_column("Command", style="green")
+            table.add_column("Description", style="yellow")
+            table.add_column("Parameters", style="magenta")
+
+            for i, (id_, snippet) in enumerate(snippets, 1):
+                table.add_row(
+                    str(i),
+                    id_,
+                    snippet.command,
+                    snippet.description or "",
+                    _format_parameters(snippet),
+                )
+
+            cli_main.console.print(table)
+
+            # Get user selection
+            while True:
+                try:
+                    choice_str = Prompt.ask(
+                        "Enter snippet number to delete (or 'q' to quit)"
+                    )
+                    if choice_str.lower() == "q":
+                        return
+                    choice = int(choice_str)
+                    if 1 <= choice <= len(snippets):
+                        selected_snippet_id = snippets[choice - 1][0]
+                        selected_snippet = snippets[choice - 1][1]
+                        break
+                    cli_main.console.print("[red]Invalid selection[/red]")
+                except (ValueError, EOFError):
+                    cli_main.console.print("[red]Please enter a number[/red]")
+                except KeyboardInterrupt:
+                    cli_main.console.print("\n[yellow]Operation cancelled[/yellow]")
+                    return
+        else:
+            # Use provided snippet ID
+            selected_snippet_id = snippet_id
+            selected_snippet = cli_main.storage.get_snippet(snippet_id)
+            if not selected_snippet:
+                cli_main.console.print(f"[red]Snippet not found:[/red] {snippet_id}")
+                return
+
+        # Show confirmation prompt before deleting
+        cli_main.console.print("\n[yellow]About to delete snippet:[/yellow]")
+        cli_main.console.print(f"  [cyan]ID:[/cyan] {selected_snippet_id}")
+        cli_main.console.print(f"  [cyan]Command:[/cyan] {selected_snippet.command}")
+        if selected_snippet.description:
+            cli_main.console.print(
+                f"  [cyan]Description:[/cyan] {selected_snippet.description}"
+            )
+
+        if not Confirm.ask(
+            "\n[red]Are you sure you want to delete this snippet?[/red]", default=False
+        ):
+            cli_main.console.print("[yellow]Deletion cancelled[/yellow]")
+            return
+
+        # Perform deletion
+        if cli_main.storage.delete_snippet(selected_snippet_id):
+            cli_main.console.print(
+                f"[green]✓ Deleted snippet:[/green] {selected_snippet_id}"
+            )
+        else:
+            cli_main.console.print(
+                f"[red]Failed to delete snippet:[/red] {selected_snippet_id}"
+            )
+
+    except KeyboardInterrupt:
+        cli_main.console.print("\n[yellow]Operation cancelled[/yellow]")
 
 
 @main.command()
