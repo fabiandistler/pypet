@@ -5,6 +5,44 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-11-07
+
+### ✨ Added
+
+#### Shell Alias Functionality (Issue #7)
+- **New `pypet alias` command group** - Create persistent bash/zsh aliases from snippets
+- **Simple alias generation** - For commands without parameters, creates standard shell aliases
+- **Function generation for parameterized snippets** - Automatically creates shell functions that call `pypet exec`
+- **Alias management commands**:
+  - `pypet alias add <snippet-id> <alias-name>` - Add alias to existing snippet
+  - `pypet alias list` - Display all snippets with aliases
+  - `pypet alias remove <snippet-id>` - Remove alias from snippet
+  - `pypet alias update` - Regenerate aliases.sh file
+  - `pypet alias setup [--copy]` - Show setup instructions with optional clipboard copy
+  - `pypet alias show <snippet-id>` - Display alias definition
+- **New `--alias/-a` option for `pypet new`** - Create snippets with aliases in one command
+- **Alias validation** - Ensures alias names are valid shell identifiers
+- **Duplicate detection** - Warns when creating duplicate alias names with override option
+- **Persistent storage** - Aliases stored in `~/.config/pypet/aliases.sh`
+- **Shell profile integration** - Easy setup with source command
+
+#### Interactive Delete Mode (Issue #32)
+- **Interactive snippet selection** - Run `pypet delete` without ID to select from list
+- **Confirmation prompts** - Always asks for confirmation before deletion
+- **Detailed preview** - Shows snippet details before deleting
+
+### 🧪 Technical
+- **Enhanced Snippet model** - Added `alias` field with TOML serialization support
+- **New AliasManager module** - Handles alias file generation and management
+- **30 new tests** - Comprehensive coverage for alias functionality (15 unit + 15 CLI tests)
+- **Updated Storage layer** - Added `get_snippets_with_aliases()` method
+- **Total test count: 130 tests** (up from 100)
+
+### 📚 Documentation
+- **Updated README** - New "Shell Aliases" section with examples and setup instructions
+- **Updated CLAUDE.md** - Architecture documentation for alias functionality
+- **Enhanced feature list** - Highlights new alias capabilities
+
 ## [0.2.1] - 2025-11-05
 
 ### 🔧 Development Improvements
