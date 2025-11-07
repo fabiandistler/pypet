@@ -2,10 +2,14 @@
 Main entry point for pypet CLI
 """
 
+import io
+from contextlib import redirect_stderr, redirect_stdout
+
 import click
 from rich.console import Console
 from rich.prompt import Prompt
 
+from ..config import Config
 from ..models import Parameter, Snippet
 from ..storage import Storage
 from ..sync import SyncManager
@@ -15,6 +19,39 @@ from ..sync import SyncManager
 console = Console()
 storage = Storage()
 sync_manager = SyncManager(storage.config_path)
+config = Config()
+
+
+def _auto_sync_if_enabled() -> None:
+    """Perform auto-sync if enabled in config."""
+    if not config.auto_sync:
+        return
+
+    # Only auto-sync if we're in a git repo with a remote
+    if not sync_manager.is_git_repo:
+        return
+
+    if not sync_manager.repo or "origin" not in [
+        r.name for r in sync_manager.repo.remotes
+    ]:
+        return
+
+    # Perform sync quietly (suppress normal output)
+    try:
+        # Create a buffer to capture output
+        buffer = io.StringIO()
+
+        with redirect_stdout(buffer), redirect_stderr(buffer):
+            success = sync_manager.sync(auto_commit=True, commit_message=None)
+
+        # Only show errors or minimal success message
+        if not success:
+            console.print(
+                "[yellow]Auto-sync encountered errors. Use 'pypet sync status' to check.[/yellow]"
+            )
+    except Exception:
+        # Silently fail - don't interrupt the user's workflow
+        pass
 
 
 def _format_parameters(snippet: Snippet | None) -> str:

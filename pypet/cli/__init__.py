@@ -26,6 +26,7 @@ from . import (  # noqa: F401
 console = main_module.console
 storage = main_module.storage
 sync_manager = main_module.sync_manager
+config = main_module.config
 
 # Export main and global instances for the entry point and tests
-__all__ = ["console", "main", "main_module", "storage", "sync_manager"]
+__all__ = ["config", "console", "main", "main_module", "storage", "sync_manager"]
