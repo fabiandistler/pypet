@@ -249,53 +249,59 @@ def test_sync_auto_enable(runner, tmp_path):
     """Test enabling auto-sync."""
     config_file = tmp_path / "config.toml"
 
-    with patch("pypet.cli.sync_commands.config.config_path", config_file):
-        with patch("pypet.cli.main_module.sync_manager") as mock_sync_manager:
-            mock_sync_manager.is_git_repo = True
-            mock_repo = MagicMock()
-            mock_remote = MagicMock()
-            mock_remote.name = "origin"
-            mock_repo.remotes = [mock_remote]
-            mock_sync_manager.repo = mock_repo
+    with (
+        patch("pypet.cli.sync_commands.config.config_path", config_file),
+        patch("pypet.cli.main_module.sync_manager") as mock_sync_manager,
+    ):
+        mock_sync_manager.is_git_repo = True
+        mock_repo = MagicMock()
+        mock_remote = MagicMock()
+        mock_remote.name = "origin"
+        mock_repo.remotes = [mock_remote]
+        mock_sync_manager.repo = mock_repo
 
-            result = runner.invoke(main, ["sync", "auto", "enable"])
-            assert result.exit_code == 0
-            assert "Auto-sync enabled" in result.output
+        result = runner.invoke(main, ["sync", "auto", "enable"])
+        assert result.exit_code == 0
+        assert "Auto-sync enabled" in result.output
 
-            # Verify config was set
-            config = Config(config_file)
-            assert config.auto_sync is True
+        # Verify config was set
+        config = Config(config_file)
+        assert config.auto_sync is True
 
 
 def test_sync_auto_enable_no_git_repo(runner, tmp_path):
     """Test enabling auto-sync when no git repo."""
     config_file = tmp_path / "config.toml"
 
-    with patch("pypet.cli.sync_commands.config.config_path", config_file):
-        with patch("pypet.cli.main_module.sync_manager") as mock_sync_manager:
-            mock_sync_manager.is_git_repo = False
+    with (
+        patch("pypet.cli.sync_commands.config.config_path", config_file),
+        patch("pypet.cli.main_module.sync_manager") as mock_sync_manager,
+    ):
+        mock_sync_manager.is_git_repo = False
 
-            result = runner.invoke(main, ["sync", "auto", "enable"])
-            assert result.exit_code == 0
-            assert "Auto-sync enabled" in result.output
-            assert "Git repository not initialized" in result.output
+        result = runner.invoke(main, ["sync", "auto", "enable"])
+        assert result.exit_code == 0
+        assert "Auto-sync enabled" in result.output
+        assert "Git repository not initialized" in result.output
 
 
 def test_sync_auto_enable_no_remote(runner, tmp_path):
     """Test enabling auto-sync when no remote configured."""
     config_file = tmp_path / "config.toml"
 
-    with patch("pypet.cli.sync_commands.config.config_path", config_file):
-        with patch("pypet.cli.main_module.sync_manager") as mock_sync_manager:
-            mock_sync_manager.is_git_repo = True
-            mock_repo = MagicMock()
-            mock_repo.remotes = []
-            mock_sync_manager.repo = mock_repo
+    with (
+        patch("pypet.cli.sync_commands.config.config_path", config_file),
+        patch("pypet.cli.main_module.sync_manager") as mock_sync_manager,
+    ):
+        mock_sync_manager.is_git_repo = True
+        mock_repo = MagicMock()
+        mock_repo.remotes = []
+        mock_sync_manager.repo = mock_repo
 
-            result = runner.invoke(main, ["sync", "auto", "enable"])
-            assert result.exit_code == 0
-            assert "Auto-sync enabled" in result.output
-            assert "No Git remote configured" in result.output
+        result = runner.invoke(main, ["sync", "auto", "enable"])
+        assert result.exit_code == 0
+        assert "Auto-sync enabled" in result.output
+        assert "No Git remote configured" in result.output
 
 
 def test_sync_auto_disable(runner, tmp_path):
@@ -320,31 +326,35 @@ def test_sync_auto_status_enabled(runner, tmp_path):
     config = Config(config_file)
     config.auto_sync = True
 
-    with patch("pypet.cli.sync_commands.config.config_path", config_file):
-        with patch("pypet.cli.main_module.sync_manager") as mock_sync_manager:
-            mock_sync_manager.is_git_repo = True
-            mock_repo = MagicMock()
-            mock_remote = MagicMock()
-            mock_remote.name = "origin"
-            mock_repo.remotes = [mock_remote]
-            mock_sync_manager.repo = mock_repo
+    with (
+        patch("pypet.cli.sync_commands.config.config_path", config_file),
+        patch("pypet.cli.main_module.sync_manager") as mock_sync_manager,
+    ):
+        mock_sync_manager.is_git_repo = True
+        mock_repo = MagicMock()
+        mock_remote = MagicMock()
+        mock_remote.name = "origin"
+        mock_repo.remotes = [mock_remote]
+        mock_sync_manager.repo = mock_repo
 
-            result = runner.invoke(main, ["sync", "auto", "status"])
-            assert result.exit_code == 0
-            assert "Auto-Sync Status" in result.output
-            assert "Enabled" in result.output
+        result = runner.invoke(main, ["sync", "auto", "status"])
+        assert result.exit_code == 0
+        assert "Auto-Sync Status" in result.output
+        assert "Enabled" in result.output
 
 
 def test_sync_auto_status_disabled(runner, tmp_path):
     """Test auto-sync status when disabled."""
     config_file = tmp_path / "config.toml"
 
-    with patch("pypet.cli.sync_commands.config.config_path", config_file):
-        with patch("pypet.cli.main_module.sync_manager") as mock_sync_manager:
-            mock_sync_manager.is_git_repo = False
+    with (
+        patch("pypet.cli.sync_commands.config.config_path", config_file),
+        patch("pypet.cli.main_module.sync_manager") as mock_sync_manager,
+    ):
+        mock_sync_manager.is_git_repo = False
 
-            result = runner.invoke(main, ["sync", "auto", "status"])
-            assert result.exit_code == 0
-            assert "Auto-Sync Status" in result.output
-            assert "Disabled" in result.output
-            assert "enable auto-sync" in result.output
+        result = runner.invoke(main, ["sync", "auto", "status"])
+        assert result.exit_code == 0
+        assert "Auto-Sync Status" in result.output
+        assert "Disabled" in result.output
+        assert "enable auto-sync" in result.output
