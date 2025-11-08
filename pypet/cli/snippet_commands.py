@@ -11,7 +11,7 @@ from rich.table import Table
 
 from ..alias_manager import AliasManager
 from . import main_module as cli_main
-from .main import _format_parameters, _parse_parameters, main
+from .main import _auto_sync_if_enabled, _format_parameters, _parse_parameters, main
 
 
 @main.command(name="list")
@@ -83,6 +83,9 @@ def new(
         cli_main.console.print(
             f"[dim]Run this to activate:[/dim] source {alias_manager.alias_path}"
         )
+
+    # Auto-sync if enabled
+    _auto_sync_if_enabled()
 
 
 @main.command()
@@ -191,6 +194,9 @@ def delete(snippet_id: str | None = None) -> None:
             cli_main.console.print(
                 f"[green]✓ Deleted snippet:[/green] {selected_snippet_id}"
             )
+
+            # Auto-sync if enabled
+            _auto_sync_if_enabled()
         else:
             cli_main.console.print(
                 f"[red]Failed to delete snippet:[/red] {selected_snippet_id}"
@@ -239,6 +245,9 @@ def edit(
             cli_main.console.print(
                 f"[green]✓ Opened {cli_main.storage.config_path} in {editor}[/green]"
             )
+
+            # Auto-sync if enabled (user may have made changes)
+            _auto_sync_if_enabled()
         except FileNotFoundError:
             cli_main.console.print(
                 f"[red]Error:[/red] Editor '{editor}' not found. Set EDITOR environment variable."
@@ -298,5 +307,8 @@ def edit(
             table.add_row("Parameters", _format_parameters(updated))
 
             cli_main.console.print(table)
+
+        # Auto-sync if enabled
+        _auto_sync_if_enabled()
     else:
         cli_main.console.print("[red]Failed to update snippet[/red]")

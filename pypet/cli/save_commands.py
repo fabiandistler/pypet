@@ -11,7 +11,7 @@ import pyperclip
 from rich.prompt import Confirm, Prompt
 
 from . import main_module as cli_main
-from .main import _parse_parameters, main
+from .main import _auto_sync_if_enabled, _parse_parameters, main
 
 
 @main.command("save-clipboard")
@@ -61,6 +61,9 @@ def save_clipboard(
         cli_main.console.print(
             f"[green]Added new snippet with ID:[/green] {snippet_id}"
         )
+
+        # Auto-sync if enabled
+        _auto_sync_if_enabled()
 
     except Exception as e:
         cli_main.console.print(f"[red]Error accessing clipboard:[/red] {e}")
@@ -275,6 +278,9 @@ def save_last(
         cli_main.console.print(
             f"[green]Added new snippet with ID:[/green] {snippet_id}"
         )
+
+        # Auto-sync if enabled
+        _auto_sync_if_enabled()
 
     except subprocess.TimeoutExpired:
         cli_main.console.print("[red]Error:[/red] Timeout accessing shell history")
