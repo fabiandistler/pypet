@@ -213,10 +213,86 @@ def test_snippet_model_without_alias():
 def test_alias_with_special_characters(temp_alias_path):
     """Test alias generation with special shell characters"""
     manager = AliasManager(temp_alias_path)
-    # Command with special characters should be properly quoted
     snippet = Snippet(command="echo 'hello world'", alias="greet")
 
     alias_def = manager._generate_alias_definition("greet", "123", snippet)
     assert "alias greet=" in alias_def
-    # The command should be safely quoted
     assert "'" in alias_def or '"' in alias_def
+
+
+def test_validate_alias_name_valid():
+    """Test alias name validation with valid names"""
+    manager = AliasManager()
+
+    valid, msg = manager.validate_alias_name("my_alias")
+    assert valid is True
+    assert msg == ""
+
+    valid, msg = manager.validate_alias_name("my-alias")
+    assert valid is True
+
+    valid, msg = manager.validate_alias_name("myalias123")
+    assert valid is True
+
+
+def test_validate_alias_name_invalid():
+    """Test alias name validation with invalid names"""
+    manager = AliasManager()
+
+    valid, msg = manager.validate_alias_name("")
+    assert valid is False
+    assert "empty" in msg.lower()
+
+    valid, msg = manager.validate_alias_name("my alias")
+    assert valid is False
+    assert "Invalid" in msg
+
+    valid, msg = manager.validate_alias_name("my@alias")
+    assert valid is False
+
+    valid, msg = manager.validate_alias_name("a" * 65)
+    assert valid is False
+    assert "too long" in msg.lower()
+
+
+def test_validate_snippet_id_valid(temp_alias_path):
+    """Test snippet ID validation with valid IDs"""
+    manager = AliasManager(temp_alias_path)
+
+    manager.validate_snippet_id("20231201120000123456")
+    manager.validate_snippet_id("abc-123")
+    manager.validate_snippet_id("test_snippet_123")
+
+
+def test_validate_snippet_id_invalid(temp_alias_path):
+    """Test snippet ID validation rejects shell metacharacters"""
+    manager = AliasManager(temp_alias_path)
+    snippet = Snippet(command="echo {msg}", parameters={"msg": Parameter(name="msg")})
+
+    with pytest.raises(ValueError, match="Invalid snippet ID"):
+        manager._generate_alias_definition("test", "abc; rm -rf /", snippet)
+
+    with pytest.raises(ValueError, match="Invalid snippet ID"):
+        manager._generate_alias_definition("test", "id$(whoami)", snippet)
+
+    with pytest.raises(ValueError, match="Invalid snippet ID"):
+        manager._generate_alias_definition("test", "id`ls`", snippet)
+
+    with pytest.raises(ValueError, match="Invalid snippet ID"):
+        manager._generate_alias_definition("test", "id|cat", snippet)
+
+
+def test_atomic_file_write(temp_alias_path):
+    """Test that alias file is written atomically"""
+    manager = AliasManager(temp_alias_path)
+    snippet = Snippet(command="ls -la", alias="ll")
+    snippets = [("123", snippet)]
+
+    manager.update_aliases_file(snippets)
+
+    assert temp_alias_path.exists()
+    assert not temp_alias_path.with_suffix(".tmp").exists()
+
+    content = temp_alias_path.read_text()
+    assert content.endswith("\n")
+    assert "alias ll='ls -la'" in content

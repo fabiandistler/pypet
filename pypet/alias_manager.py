@@ -2,6 +2,7 @@
 Alias management for pypet snippets
 """
 
+import re
 import shlex
 from pathlib import Path
 
@@ -19,6 +20,42 @@ class AliasManager:
         self.alias_path = alias_path or DEFAULT_ALIAS_PATH
         self.alias_path.parent.mkdir(parents=True, exist_ok=True)
 
+    @staticmethod
+    def validate_alias_name(alias_name: str) -> tuple[bool, str]:
+        """
+        Validate alias name for shell safety.
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not alias_name:
+            return False, "Alias name cannot be empty"
+
+        if len(alias_name) > 64:
+            return False, "Alias name too long (max 64 characters)"
+
+        if not alias_name.replace("_", "").replace("-", "").isalnum():
+            return (
+                False,
+                f"Invalid alias name '{alias_name}'. "
+                "Alias names should contain only letters, numbers, underscores, and hyphens.",
+            )
+
+        return True, ""
+
+    @staticmethod
+    def validate_snippet_id(snippet_id: str) -> None:
+        """
+        Validate snippet ID for shell safety.
+
+        Raises:
+            ValueError: If snippet ID contains unsafe characters
+        """
+        if not re.match(r"^[a-zA-Z0-9_-]+$", snippet_id):
+            raise ValueError(
+                f"Invalid snippet ID '{snippet_id}': must contain only alphanumeric characters, underscores, and hyphens"
+            )
+
     def _generate_alias_definition(
         self, alias_name: str, snippet_id: str, snippet: Snippet
     ) -> str:
@@ -28,15 +65,14 @@ class AliasManager:
         For snippets without parameters, creates a simple alias.
         For snippets with parameters, creates a shell function that calls pypet exec.
         """
-        # Get all parameters (including those in placeholders)
+        self.validate_snippet_id(snippet_id)
+
         all_params = snippet.get_all_parameters()
 
         if not all_params:
-            # No parameters - create a simple alias
-            # Use shlex.quote to safely escape the command
             safe_command = shlex.quote(snippet.command)
             return f"alias {alias_name}={safe_command}"
-        # Has parameters - create a function that calls pypet exec
+
         return f'{alias_name}() {{\n    pypet exec {snippet_id} "$@"\n}}'
 
     def update_aliases_file(
@@ -60,20 +96,24 @@ class AliasManager:
             if not snippet.alias:
                 continue
 
-            # Add a comment with the snippet description
             if snippet.description:
                 lines.append(f"# {snippet.description}")
 
-            # Generate and add the alias/function definition
             alias_def = self._generate_alias_definition(
                 snippet.alias, snippet_id, snippet
             )
             lines.append(alias_def)
             lines.append("")
 
-        # Write the file
-        with self.alias_path.open("w", encoding="utf-8") as f:
-            f.write("\n".join(lines))
+        temp_file = self.alias_path.with_suffix(".tmp")
+        try:
+            with temp_file.open("w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
+            temp_file.replace(self.alias_path)
+        except Exception:
+            if temp_file.exists():
+                temp_file.unlink()
+            raise
 
     def get_source_instruction(self) -> str:
         """Get instruction for sourcing the aliases file."""

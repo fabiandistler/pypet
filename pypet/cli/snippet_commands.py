@@ -57,13 +57,12 @@ def new(
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
     parameters = _parse_parameters(params) if params else None
 
-    # Validate alias name if provided
-    if alias and not alias.replace("_", "").replace("-", "").isalnum():
-        cli_main.console.print(
-            f"[red]Error:[/red] Invalid alias name '{alias}'. "
-            "Alias names should contain only letters, numbers, underscores, and hyphens."
-        )
-        return
+    if alias:
+        alias_manager = AliasManager()
+        is_valid, error_msg = alias_manager.validate_alias_name(alias)
+        if not is_valid:
+            cli_main.console.print(f"[red]Error:[/red] {error_msg}")
+            return
 
     snippet_id = cli_main.storage.add_snippet(
         command=command,

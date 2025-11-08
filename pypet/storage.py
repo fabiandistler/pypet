@@ -139,7 +139,7 @@ class Storage:
         if parameters is not None:
             snippet.parameters = parameters
         if alias is not None:
-            snippet.alias = alias
+            snippet.alias = alias if alias else None
         snippet.updated_at = datetime.now(timezone.utc)
 
         snippets[snippet_id] = snippet.to_dict()

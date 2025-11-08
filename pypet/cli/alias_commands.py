@@ -33,12 +33,9 @@ def add_alias(snippet_id: str, alias_name: str) -> None:
         )
         return
 
-    # Validate alias name (basic shell identifier validation)
-    if not alias_name.replace("_", "").replace("-", "").isalnum():
-        cli_main.console.print(
-            f"[red]Error:[/red] Invalid alias name '{alias_name}'. "
-            "Alias names should contain only letters, numbers, underscores, and hyphens."
-        )
+    is_valid, error_msg = alias_manager.validate_alias_name(alias_name)
+    if not is_valid:
+        cli_main.console.print(f"[red]Error:[/red] {error_msg}")
         return
 
     # Check if alias already exists on another snippet
@@ -142,13 +139,7 @@ def remove_alias(snippet_id: str) -> None:
 
     old_alias = snippet.alias
 
-    # Remove the alias by setting it to None
-    # Note: We need to explicitly set it to empty string to clear it
     if cli_main.storage.update_snippet(snippet_id, alias=""):
-        # Update the snippet object to reflect the change
-        snippet.alias = None
-
-        # Regenerate aliases file
         snippets_with_aliases = cli_main.storage.get_snippets_with_aliases()
         alias_manager.update_aliases_file(snippets_with_aliases)
 
