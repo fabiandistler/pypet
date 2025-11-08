@@ -9,6 +9,7 @@
 - List and search your snippets with rich terminal output
 - Interactive command execution with pre-execution editing
 - **Copy snippets to clipboard** for easy pasting into other applications
+- **Shell aliases** - create persistent bash/zsh aliases from snippets
 - **Git synchronization** for backup and sharing across devices
 - Parameterized snippets with default values
 - Automatic backup and restore functionality
@@ -84,6 +85,12 @@ pypet edit --file
 
 # Delete a snippet
 pypet delete <snippet-id>
+
+# Alias management
+pypet alias add <snippet-id> <alias-name>    # Add alias to snippet
+pypet alias list                              # List all aliases
+pypet alias remove <snippet-id>               # Remove alias from snippet
+pypet alias setup                             # Show setup instructions
 
 # Git synchronization
 pypet sync init                    # Initialize Git repository
@@ -177,6 +184,79 @@ pypet save-last -d "Build command" -t "build,make"
 ```
 
 The `save-last` command works with bash, zsh, and other popular shells. It reads from your shell history file and lets you save recent commands as snippets.
+
+### Shell Aliases
+
+`pypet` can create persistent shell aliases from your snippets, making frequently-used commands instantly accessible without needing to run `pypet exec`.
+
+#### Adding Aliases to Snippets
+
+```bash
+# Create a new snippet with an alias
+pypet new "ls -la" -d "List all files" -a ll
+
+# Add an alias to an existing snippet
+pypet alias add <snippet-id> ll
+
+# List all snippets with aliases
+pypet alias list
+
+# Show the generated alias definition
+pypet alias show <snippet-id>
+
+# Remove an alias from a snippet
+pypet alias remove <snippet-id>
+```
+
+#### Setting Up Aliases
+
+After creating aliases, you need to source the aliases file in your shell:
+
+```bash
+# Show setup instructions
+pypet alias setup
+
+# Copy the source command to clipboard
+pypet alias setup --copy
+```
+
+Add this line to your shell profile (`~/.bashrc` for bash, `~/.zshrc` for zsh):
+
+```bash
+source ~/.config/pypet/aliases.sh
+```
+
+Then reload your shell or run:
+
+```bash
+source ~/.config/pypet/aliases.sh
+```
+
+#### How Aliases Work
+
+- **Simple snippets** (no parameters): Created as regular shell aliases
+  ```bash
+  pypet new "ls -la" -a ll
+  # Generates: alias ll='ls -la'
+  ```
+
+- **Parameterized snippets**: Created as shell functions that call `pypet exec`
+  ```bash
+  pypet new "ssh {user}@{host}" -a myssh
+  # Generates a function that prompts for parameters
+  ```
+
+#### Managing Aliases
+
+```bash
+# Regenerate the aliases file (useful after manual edits)
+pypet alias update
+
+# View all aliases
+pypet alias list
+```
+
+The aliases are stored in `~/.config/pypet/aliases.sh` and are automatically updated whenever you add or remove aliases.
 
 ### Interactive Mode
 
@@ -337,6 +417,7 @@ Snippets are stored in TOML format at `~/.config/pypet/snippets.toml`:
 command = "git status"
 description = "Check git status"
 tags = ["git", "status"]
+alias = "gs"
 created_at = "2025-06-17T10:00:00+00:00"
 updated_at = "2025-06-17T10:00:00+00:00"
 ```

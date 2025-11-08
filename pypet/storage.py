@@ -50,6 +50,7 @@ class Storage:
         description: str | None = None,
         tags: list[str] | None = None,
         parameters: dict[str, Parameter] | None = None,
+        alias: str | None = None,
     ) -> str:
         """Add a new snippet and return its ID.
 
@@ -58,6 +59,7 @@ class Storage:
             description: Optional description of what the command does
             tags: Optional list of tags for organization
             parameters: Optional dictionary of Parameter objects for customization
+            alias: Optional alias name for this snippet
         """
         snippets = self._load_snippets()
 
@@ -71,6 +73,7 @@ class Storage:
             description=description,
             tags=tags or [],
             parameters=parameters,
+            alias=alias,
         )
         snippets[snippet_id] = snippet.to_dict()
 
@@ -119,6 +122,7 @@ class Storage:
         description: str | None = None,
         tags: list[str] | None = None,
         parameters: dict[str, Parameter] | None = None,
+        alias: str | None = None,
     ) -> bool:
         """Update an existing snippet. Returns True if successful."""
         snippets = self._load_snippets()
@@ -134,6 +138,8 @@ class Storage:
             snippet.tags = tags
         if parameters is not None:
             snippet.parameters = parameters
+        if alias is not None:
+            snippet.alias = alias if alias else None
         snippet.updated_at = datetime.now(timezone.utc)
 
         snippets[snippet_id] = snippet.to_dict()
@@ -149,3 +155,9 @@ class Storage:
         del snippets[snippet_id]
         self._save_snippets(snippets)
         return True
+
+    def get_snippets_with_aliases(self) -> list[tuple[str, Snippet]]:
+        """Get all snippets that have aliases defined."""
+        return [
+            (id_, snippet) for id_, snippet in self.list_snippets() if snippet.alias
+        ]

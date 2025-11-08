@@ -9,6 +9,7 @@ import click
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
+from ..alias_manager import AliasManager
 from . import main_module as cli_main
 from .main import _auto_sync_if_enabled, _format_parameters, _parse_parameters, main
 
@@ -44,23 +45,44 @@ def list_snippets() -> None:
     "-p",
     help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
 )
+@click.option("--alias", "-a", help="Create a shell alias for this snippet")
 def new(
     command: str,
     description: str | None = None,
     tags: str | None = None,
     params: str | None = None,
+    alias: str | None = None,
 ) -> None:
     """Create a new snippet."""
     tag_list = [t.strip() for t in tags.split(",")] if tags else []
     parameters = _parse_parameters(params) if params else None
+
+    if alias:
+        alias_manager = AliasManager()
+        is_valid, error_msg = alias_manager.validate_alias_name(alias)
+        if not is_valid:
+            cli_main.console.print(f"[red]Error:[/red] {error_msg}")
+            return
 
     snippet_id = cli_main.storage.add_snippet(
         command=command,
         description=description,
         tags=tag_list,
         parameters=parameters,
+        alias=alias,
     )
     cli_main.console.print(f"[green]Added new snippet with ID:[/green] {snippet_id}")
+
+    # If alias was provided, update the aliases file
+    if alias:
+        alias_manager = AliasManager()
+        snippets_with_aliases = cli_main.storage.get_snippets_with_aliases()
+        alias_manager.update_aliases_file(snippets_with_aliases)
+
+        cli_main.console.print(f"[green]✓ Created alias:[/green] {alias}")
+        cli_main.console.print(
+            f"[dim]Run this to activate:[/dim] source {alias_manager.alias_path}"
+        )
 
     # Auto-sync if enabled
     _auto_sync_if_enabled()

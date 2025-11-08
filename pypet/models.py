@@ -47,6 +47,7 @@ class Snippet:
     description: str | None = None
     tags: list[str] | None = None
     parameters: dict[str, Parameter] | None = None
+    alias: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -61,6 +62,9 @@ class Snippet:
         # Strip whitespace from command and description
         self.command = self.command.strip() if self.command else ""
         self.description = self.description.strip() if self.description else None
+
+        # Strip whitespace from alias
+        self.alias = self.alias.strip() if self.alias else None
 
         # Remove duplicates and strip whitespace from tags
         if self.tags:
@@ -81,6 +85,7 @@ class Snippet:
             "command": self.command,
             "description": self.description,
             "tags": self.tags or [],
+            "alias": self.alias,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -109,6 +114,7 @@ class Snippet:
             description=data.get("description"),
             tags=data.get("tags", []),
             parameters=parameters,
+            alias=data.get("alias"),
             created_at=(
                 datetime.fromisoformat(data["created_at"])
                 if data.get("created_at")
