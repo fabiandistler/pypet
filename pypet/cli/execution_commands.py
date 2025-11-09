@@ -2,7 +2,9 @@
 Commands for executing and copying snippets (exec, copy)
 """
 
+import os
 import subprocess
+from pathlib import Path
 
 import click
 import pyperclip
@@ -11,6 +13,40 @@ from rich.table import Table
 
 from . import main_module as cli_main
 from .main import _format_parameters, _prompt_for_parameters, main
+
+
+def _execute_with_shell_support(command: str) -> subprocess.CompletedProcess:
+    """
+    Execute a command with shell alias support.
+
+    This function runs commands through the user's interactive shell to ensure
+    that shell aliases are properly recognized. It detects the user's shell
+    (bash/zsh) and executes the command in interactive mode.
+
+    Args:
+        command: The command to execute
+
+    Returns:
+        CompletedProcess instance from subprocess.run
+
+    Raises:
+        subprocess.CalledProcessError: If the command fails
+    """
+    # Get user's shell from SHELL environment variable
+    user_shell = os.environ.get("SHELL", "/bin/sh")
+    shell_name = Path(user_shell).name
+
+    # For bash and zsh, use interactive mode with -i flag
+    # This ensures that shell configuration files are sourced, including aliases
+    if shell_name in ("bash", "zsh"):
+        # Use -i for interactive mode (loads aliases) and -c to run the command
+        # The interactive mode ensures ~/.bashrc or ~/.zshrc is sourced
+        shell_command = [user_shell, "-i", "-c", command]
+        return subprocess.run(shell_command, check=True)
+    # Fall back to the original behavior for other shells
+    # Note: shell=True is required for pypet's use case of executing shell commands
+    # with pipes, redirects, etc. User confirmation is required before execution.
+    return subprocess.run(command, shell=True, check=True)
 
 
 @main.command()
@@ -271,9 +307,7 @@ def exec(
                 return
 
             try:
-                # Note: shell=True is required for pypet's use case of executing shell commands
-                # with pipes, redirects, etc. User confirmation is required before execution.
-                subprocess.run(final_command, shell=True, check=True)
+                _execute_with_shell_support(final_command)
             except subprocess.CalledProcessError as e:
                 cli_main.console.print(
                     f"[red]Command failed with exit code {e.returncode}[/red]"
