@@ -18,11 +18,11 @@ from .main import _auto_sync_if_enabled, _format_parameters, _parse_parameters, 
 def list_snippets() -> None:
     """List all snippets."""
     table = Table(title="Snippets")
-    table.add_column("ID", style="blue")
-    table.add_column("Command", style="cyan")
-    table.add_column("Description", style="green")
-    table.add_column("Tags", style="yellow")
-    table.add_column("Parameters", style="magenta")
+    table.add_column("ID", style="blue", no_wrap=True)
+    table.add_column("Command", style="cyan", overflow="fold", no_wrap=False)
+    table.add_column("Description", style="green", no_wrap=False)
+    table.add_column("Tags", style="yellow", no_wrap=False)
+    table.add_column("Parameters", style="magenta", no_wrap=False)
 
     for snippet_id, snippet in cli_main.storage.list_snippets():
         table.add_row(
@@ -93,11 +93,11 @@ def new(
 def search(query: str) -> None:
     """Search for snippets."""
     table = Table(title=f"Search Results for '{query}'")
-    table.add_column("ID", style="blue")
-    table.add_column("Command", style="cyan")
-    table.add_column("Description", style="green")
-    table.add_column("Tags", style="yellow")
-    table.add_column("Parameters", style="magenta")
+    table.add_column("ID", style="blue", no_wrap=True)
+    table.add_column("Command", style="cyan", overflow="fold", no_wrap=False)
+    table.add_column("Description", style="green", no_wrap=False)
+    table.add_column("Tags", style="yellow", no_wrap=False)
+    table.add_column("Parameters", style="magenta", no_wrap=False)
 
     for snippet_id, snippet in cli_main.storage.search_snippets(query):
         table.add_row(
@@ -130,11 +130,11 @@ def delete(snippet_id: str | None = None) -> None:
 
             # Display snippets table for selection
             table = Table(title="Available Snippets")
-            table.add_column("Index", style="blue")
-            table.add_column("ID", style="cyan")
-            table.add_column("Command", style="green")
-            table.add_column("Description", style="yellow")
-            table.add_column("Parameters", style="magenta")
+            table.add_column("Index", style="blue", no_wrap=True)
+            table.add_column("ID", style="cyan", no_wrap=True)
+            table.add_column("Command", style="green", overflow="fold", no_wrap=False)
+            table.add_column("Description", style="yellow", no_wrap=False)
+            table.add_column("Parameters", style="magenta", no_wrap=False)
 
             for i, (id_, snippet) in enumerate(snippets, 1):
                 table.add_row(

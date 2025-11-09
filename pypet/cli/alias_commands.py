@@ -95,11 +95,11 @@ def list_aliases() -> None:
         return
 
     table = Table(title="Snippets with Aliases")
-    table.add_column("Alias", style="green bold")
-    table.add_column("ID", style="blue")
-    table.add_column("Command", style="cyan")
-    table.add_column("Description", style="yellow")
-    table.add_column("Has Params", style="magenta")
+    table.add_column("Alias", style="green bold", no_wrap=True)
+    table.add_column("ID", style="blue", no_wrap=True)
+    table.add_column("Command", style="cyan", overflow="fold", no_wrap=False)
+    table.add_column("Description", style="yellow", no_wrap=False)
+    table.add_column("Has Params", style="magenta", no_wrap=True)
 
     for snippet_id, snippet in snippets_with_aliases:
         has_params = "Yes" if snippet.get_all_parameters() else "No"

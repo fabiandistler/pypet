@@ -40,11 +40,11 @@ def copy(
 
             # Display snippets table for selection
             table = Table(title="Available Snippets")
-            table.add_column("Index", style="blue")
-            table.add_column("ID", style="cyan")
-            table.add_column("Command", style="green")
-            table.add_column("Description", style="yellow")
-            table.add_column("Parameters", style="magenta")
+            table.add_column("Index", style="blue", no_wrap=True)
+            table.add_column("ID", style="cyan", no_wrap=True)
+            table.add_column("Command", style="green", overflow="fold", no_wrap=False)
+            table.add_column("Description", style="yellow", no_wrap=False)
+            table.add_column("Parameters", style="magenta", no_wrap=False)
 
             for i, (id_, snippet) in enumerate(snippets, 1):
                 table.add_row(
@@ -157,11 +157,11 @@ def exec(
 
             # Display snippets table for selection
             table = Table(title="Available Snippets")
-            table.add_column("Index", style="blue")
-            table.add_column("ID", style="cyan")
-            table.add_column("Command", style="green")
-            table.add_column("Description", style="yellow")
-            table.add_column("Parameters", style="magenta")
+            table.add_column("Index", style="blue", no_wrap=True)
+            table.add_column("ID", style="cyan", no_wrap=True)
+            table.add_column("Command", style="green", overflow="fold", no_wrap=False)
+            table.add_column("Description", style="yellow", no_wrap=False)
+            table.add_column("Parameters", style="magenta", no_wrap=False)
 
             for i, (id_, snippet) in enumerate(snippets, 1):
                 table.add_row(
