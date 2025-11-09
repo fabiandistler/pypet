@@ -5,6 +5,20 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-11-09
+
+### 🐛 Fixed
+- **Long snippet truncation** (Issue #38) - Fixed Rich table rendering to properly wrap long commands instead of cutting them off
+  - Added `overflow="fold"` to Command columns in all table displays
+  - Configured proper `no_wrap` settings for all table columns
+  - Long commands now wrap across multiple lines while maintaining readability
+  - Affected commands: `list`, `search`, `delete`, `copy`, `exec`, `alias list`
+
+### 🧪 Testing
+- Added `test_list_with_long_command()` - Verifies long docker commands display correctly
+- Added `test_search_with_long_command()` - Verifies long kubectl commands appear in search results
+- **Total test count: 154 tests**
+
 ## [0.5.0] - 2025-11-07
 
 ### ✨ Added
