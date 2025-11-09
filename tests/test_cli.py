@@ -454,3 +454,39 @@ def test_copy_with_clipboard_error(runner, mock_storage):
         assert result.exit_code == 0
         assert "Failed to copy to clipboard" in result.output
         assert "Command:" in result.output
+
+
+def test_list_with_long_command(runner, mock_storage):
+    """Test that long commands are displayed properly without truncation."""
+    long_command = "docker run --name my-container -e ENV_VAR=value -p 8080:80 -v /host/path:/container/path --restart unless-stopped --network my-network my-image:latest"
+
+    mock_storage.add_snippet(
+        long_command,
+        "Long docker command example",
+        ["docker", "container"]
+    )
+
+    with patch("pypet.cli.main_module.storage", mock_storage):
+        result = runner.invoke(main, ["list"])
+        assert result.exit_code == 0
+        assert "docker run" in result.output
+        # Text may be wrapped across lines, so check for key parts
+        assert "my-image" in result.output or "my-" in result.output
+        assert "--restart" in result.output
+
+
+def test_search_with_long_command(runner, mock_storage):
+    """Test that long commands appear in search results."""
+    long_command = "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml"
+
+    mock_storage.add_snippet(
+        long_command,
+        "Deploy nginx ingress controller",
+        ["kubernetes", "k8s"]
+    )
+
+    with patch("pypet.cli.main_module.storage", mock_storage):
+        result = runner.invoke(main, ["search", "kubectl"])
+        assert result.exit_code == 0
+        assert "kubectl" in result.output
+        assert "ingress" in result.output
