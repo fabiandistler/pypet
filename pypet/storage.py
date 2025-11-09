@@ -93,7 +93,7 @@ class Storage:
         return [(id_, Snippet.from_dict(data)) for id_, data in snippets.items()]
 
     def search_snippets(self, query: str) -> list[tuple[str, Snippet]]:
-        """Search snippets by command, description, tags, or parameter names."""
+        """Search snippets by command, description, tags, alias, or parameter names."""
         query = query.lower()
         results = []
 
@@ -102,6 +102,7 @@ class Storage:
                 query in snippet.command.lower()
                 or (snippet.description and query in snippet.description.lower())
                 or (snippet.tags and any(query in tag.lower() for tag in snippet.tags))
+                or (snippet.alias and query in snippet.alias.lower())
                 or (
                     snippet.parameters
                     and any(

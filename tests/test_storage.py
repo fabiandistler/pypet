@@ -80,6 +80,34 @@ def test_search_snippets(temp_storage):
     assert len(remote_results) == 1
 
 
+def test_search_snippets_by_alias(temp_storage):
+    """Test searching snippets by alias name"""
+    # Add test snippets with aliases
+    temp_storage.add_snippet(
+        "git status", "Show git status", ["git"], alias="gst"
+    )
+    temp_storage.add_snippet(
+        "docker ps -a", "List all containers", ["docker"], alias="dps"
+    )
+    temp_storage.add_snippet(
+        "kubectl get pods", "List kubernetes pods", ["k8s"]
+    )  # No alias
+
+    # Search by alias
+    gst_results = temp_storage.search_snippets("gst")
+    assert len(gst_results) == 1
+    assert gst_results[0][1].alias == "gst"
+
+    # Search by partial alias
+    dps_results = temp_storage.search_snippets("dps")
+    assert len(dps_results) == 1
+    assert dps_results[0][1].command == "docker ps -a"
+
+    # Search for snippet without alias should still work by command
+    k8s_results = temp_storage.search_snippets("kubectl")
+    assert len(k8s_results) == 1
+
+
 def test_update_snippet(temp_storage):
     """Test updating a snippet"""
     # Add a snippet
