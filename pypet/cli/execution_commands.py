@@ -19,9 +19,9 @@ def _execute_with_shell_support(command: str) -> subprocess.CompletedProcess:
     """
     Execute a command with shell alias support.
 
-    This function runs commands through the user's interactive shell to ensure
-    that shell aliases are properly recognized. It detects the user's shell
-    (bash/zsh) and executes the command in interactive mode.
+    This function runs commands through the user's shell with alias expansion enabled.
+    It detects the user's shell (bash/zsh) and sources the appropriate configuration
+    file to load aliases before executing the command.
 
     Args:
         command: The command to execute
@@ -36,13 +36,20 @@ def _execute_with_shell_support(command: str) -> subprocess.CompletedProcess:
     user_shell = os.environ.get("SHELL", "/bin/sh")
     shell_name = Path(user_shell).name
 
-    # For bash and zsh, use interactive mode with -i flag
-    # This ensures that shell configuration files are sourced, including aliases
-    if shell_name in ("bash", "zsh"):
-        # Use -i for interactive mode (loads aliases) and -c to run the command
-        # The interactive mode ensures ~/.bashrc or ~/.zshrc is sourced
-        shell_command = [user_shell, "-i", "-c", command]
-        return subprocess.run(shell_command, check=True)
+    # For bash and zsh, explicitly source config and enable alias expansion
+    # This is more reliable than -i flag which can hang on interactive prompts
+    if shell_name == "bash":
+        # Source .bashrc and enable alias expansion, then run the command
+        # Errors from sourcing are suppressed to handle missing/broken .bashrc
+        wrapped_command = f"source ~/.bashrc 2>/dev/null; shopt -s expand_aliases; {command}"
+        shell_command = [user_shell, "-c", wrapped_command]
+        return subprocess.run(shell_command, check=True, stdin=subprocess.DEVNULL)
+    if shell_name == "zsh":
+        # Source .zshrc then run the command
+        # Errors from sourcing are suppressed to handle missing/broken .zshrc
+        wrapped_command = f"source ~/.zshrc 2>/dev/null; {command}"
+        shell_command = [user_shell, "-c", wrapped_command]
+        return subprocess.run(shell_command, check=True, stdin=subprocess.DEVNULL)
     # Fall back to the original behavior for other shells
     # Note: shell=True is required for pypet's use case of executing shell commands
     # with pipes, redirects, etc. User confirmation is required before execution.

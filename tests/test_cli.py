@@ -88,11 +88,11 @@ def test_exec_with_edit(runner, mock_storage):
         result = runner.invoke(main, ["exec", snippet_id, "-e"])
         assert result.exit_code == 0
         mock_run.assert_called_once()
-        # Verify modified command was used (now passes through shell with -i -c)
+        # Verify modified command was used (wrapped with shell config sourcing)
         call_args = mock_run.call_args[0][0]
         if isinstance(call_args, list):
-            # For bash/zsh, command is the last element
-            assert call_args[-1] == "ls -lah"
+            # For bash/zsh, command is wrapped with config sourcing
+            assert "ls -lah" in call_args[-1]
         else:
             # For other shells, command is passed directly
             assert call_args == "ls -lah"
@@ -373,11 +373,11 @@ def test_exec_special_characters(runner, mock_storage):
         result = runner.invoke(main, ["exec", snippet_id])
         assert result.exit_code == 0
         mock_run.assert_called_once()
-        # Verify command was passed correctly (now passes through shell with -i -c)
+        # Verify command was passed correctly (wrapped with shell config sourcing)
         call_args = mock_run.call_args[0][0]
         if isinstance(call_args, list):
-            # For bash/zsh, command is the last element
-            assert call_args[-1] == "echo 'Hello World!' && ls -la"
+            # For bash/zsh, command is wrapped with config sourcing
+            assert "echo 'Hello World!' && ls -la" in call_args[-1]
         else:
             # For other shells, command is passed directly
             assert call_args == "echo 'Hello World!' && ls -la"
