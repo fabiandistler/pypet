@@ -43,7 +43,7 @@ def list_snippets() -> None:
 @click.option(
     "--params",
     "-p",
-    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
+    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number. Use {{param}} syntax in command for placeholders.",
 )
 @click.option("--alias", "-a", help="Create a shell alias for this snippet")
 def new(
@@ -214,7 +214,7 @@ def delete(snippet_id: str | None = None) -> None:
 @click.option(
     "--params",
     "-p",
-    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
+    help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number. Use {{param}} syntax in command for placeholders.",
 )
 @click.option(
     "--file", "-f", "edit_file", is_flag=True, help="Open TOML file directly in editor"

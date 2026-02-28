@@ -6,10 +6,12 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from .parameters import ParameterDetector, ParameterSubstitutor
+
 
 @dataclass
 class Parameter:
-    """A parameter for a command-line snippet."""
+    """A parameter for a command-line snippet (legacy support)."""
 
     name: str
     default: str | None = None
@@ -131,20 +133,16 @@ class Snippet:
         """
         Apply parameter values to the command string.
 
-        This method automatically detects parameter placeholders in the command string
-        in the format {name} or {name=default} and substitutes them with provided values.
-
-        For formally defined parameters (in self.parameters), it uses their definitions.
-        For undefined parameters found in the command, it extracts defaults from the
-        placeholder format {name=default} or raises an error if no value is provided.
-
-        If a parameter is not provided in params, its default value will be used.
-        If a parameter has no default and is not provided, a ValueError is raised.
+        Supports both new {{param}} and legacy {param} syntax.
         """
         params = params or {}
         result = self.command
 
-        # Get all parameters (both defined and discovered from placeholders)
+        # Try new syntax first
+        if ParameterDetector.has_new_syntax(result):
+            return ParameterSubstitutor.substitute_parameters(result, params)
+
+        # Fall back to legacy syntax handling
         all_params = self.get_all_parameters()
 
         # Apply parameter substitution
@@ -153,11 +151,11 @@ class Snippet:
             if value is None:
                 raise ValueError(f"No value provided for required parameter: {name}")
 
-            # Replace both ${name} and {name} patterns
+            # Replace both ${name} and {name} patterns (legacy)
             result = result.replace(f"${{{name}}}", value)
             result = result.replace(f"{{{name}}}", value)
 
-            # Also replace {name=default} patterns
+            # Also replace {name=default} patterns (legacy)
             if param.default is not None:
                 result = result.replace(f"{{{name}={param.default}}}", value)
 
@@ -170,16 +168,34 @@ class Snippet:
 
         Returns a dictionary mapping parameter names to Parameter objects.
         """
-        # Find all parameter placeholders in the command string
-        placeholder_pattern = r"\{([^}]+)\}"
-        placeholders = re.findall(placeholder_pattern, self.command)
-
         # Build a complete parameter map combining defined parameters and discovered ones
         all_params = {}
 
         # First, add formally defined parameters
         if self.parameters:
             all_params.update(self.parameters)
+
+        # Try to detect using new {{param}} syntax
+        if ParameterDetector.has_new_syntax(self.command):
+            try:
+                new_syntax_params = ParameterDetector.detect_parameters_new_syntax(
+                    self.command
+                )
+                for name, metadata in new_syntax_params.items():
+                    if name not in all_params:
+                        all_params[name] = Parameter(
+                            name=name,
+                            default=metadata.default,
+                            description=metadata.description,
+                        )
+                return all_params
+            except ValueError:
+                pass
+
+        # Fall back to legacy {param} syntax detection
+        # Find all parameter placeholders in the command string
+        placeholder_pattern = r"\{([^}]+)\}"
+        placeholders = re.findall(placeholder_pattern, self.command)
 
         # Then, discover parameters from placeholders not already defined
         for placeholder in placeholders:
@@ -192,8 +208,12 @@ class Snippet:
                 param_name = placeholder.strip()
                 param_default = None
 
-            # Only add if not already formally defined
-            if param_name not in all_params:
+            # Only add if not already formally defined and is a valid name
+            if (
+                param_name not in all_params
+                and param_name
+                and not param_name.startswith("}")
+            ):
                 all_params[param_name] = Parameter(
                     name=param_name, default=param_default, description=None
                 )

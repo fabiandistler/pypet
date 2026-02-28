@@ -17,6 +17,7 @@ from .main import main
 from . import (  # noqa: F401
     alias_commands,
     execution_commands,
+    migration_commands,
     save_commands,
     snippet_commands,
     sync_commands,
