@@ -108,7 +108,7 @@ You can create snippets with customizable parameters:
 
 ```bash
 # Create a snippet with parameters
-pypet new "docker run -p {port}:80 -v {path}:/app -e NODE_ENV={env=development} {image}" \
+pypet new "docker run -p {{port}}:80 -v {{path}}:/app -e NODE_ENV={{env=development}} {{image}}" \
     -d "Run a Docker container with custom settings" \
     -t "docker,container" \
     -p "port:Host port to bind,path:Volume path,env=development:Node environment,image:Docker image name"
@@ -122,15 +122,15 @@ pypet exec <snippet-id>
 
 Parameters can have:
 
-- Required values: `{name}`
-- Default values: `{name=default}`
+- Required values: `{{name}}`
+- Default values: `{{name=default}}`
 - Descriptions (shown when prompting)
 
 Example TOML storage for a parameterized snippet:
 
 ```toml
 [snippets.unique-id]
-command = "docker run -p {port}:80 -v {path}:/app -e NODE_ENV={env=development} {image}"
+command = "docker run -p {{port}}:80 -v {{path}}:/app -e NODE_ENV={{env=development}} {{image}}"
 description = "Run a Docker container with custom settings"
 tags = ["docker", "container"]
 created_at = "2025-06-17T10:00:00+00:00"
@@ -242,7 +242,7 @@ source ~/.config/pypet/aliases.sh
 
 - **Parameterized snippets**: Created as shell functions that call `pypet exec`
   ```bash
-  pypet new "ssh {user}@{host}" -a myssh
+  pypet new "ssh {{user}}@{{host}}" -a myssh
   # Generates a function that prompts for parameters
   ```
 
