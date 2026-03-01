@@ -81,8 +81,8 @@ jobs:
     
     - name: Install build dependencies
       run: |
-        uv pip install build
+        python -m pip install build
     
     - name: Build package
       run: |
-        uv build
+        python -m build
