@@ -59,7 +59,7 @@ jobs:
 
     - name: Run ruff check
       run: |
-        uv run ruff check pypet tests
+        uv run ruff check --config pyproject.toml pypet tests
 
     - name: Run ruff format check
       run: |
