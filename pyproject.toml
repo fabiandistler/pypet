@@ -30,6 +30,7 @@ dependencies = [
     "toml>=0.10.2",
     "pyperclip>=1.9.0",
     "gitpython>=3.1.40",
+    "build>=1.4.0",
 ]
 requires-python = ">=3.10"
 
