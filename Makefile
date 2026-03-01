@@ -1,6 +1,6 @@
 # Makefile for pypet development
 
-.PHONY: help install test lint format type-check clean hooks dev all
+.PHONY: help install test lint format type-check clean hooks dev all release-patch release-minor release-major
 
 # Default target
 help:
@@ -15,6 +15,9 @@ help:
 	@echo "  make clean       Clean build artifacts and cache files"
 	@echo "  make dev         Set up development environment"
 	@echo "  make all         Run all checks (format + lint + test)"
+	@echo "  make release-patch   Bump patch version and create git tag"
+	@echo "  make release-minor   Bump minor version and create git tag"
+	@echo "  make release-major   Bump major version and create git tag"
 	@echo ""
 	@echo "Environment variables:"
 	@echo "  SKIP_TESTS=1     Skip tests in hooks and all target"
@@ -90,3 +93,13 @@ build: clean
 # Install from local build
 install-local: build
 	pip install dist/*.whl --force-reinstall
+
+# Release commands
+release-patch:
+	@./scripts/release.sh patch
+
+release-minor:
+	@./scripts/release.sh minor
+
+release-major:
+	@./scripts/release.sh major
