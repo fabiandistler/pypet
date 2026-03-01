@@ -99,7 +99,28 @@ from pypet.storage import Storage
   pytest tests/test_models.py                   # Single file
   pytest tests/test_models.py::test_name         # Single test
   pytest tests/ -k "test_name"                  # Pattern match
+  pytest tests/ -x                               # Stop on first failure
+  pytest tests/ --tb=short                       # Short traceback
   ```
+
+## Debugging Tips
+- **CLI Debugging**: Use `uv run python -m pypet.cli --help` to test CLI
+- **Import Testing**: Test imports with `uv run python -c "from pypet import ..."`
+- **Verbose Tests**: Add `-v` flag to pytest for verbose output
+
+## Common Development Tasks
+
+### Adding a New CLI Command
+1. Create new module in `pypet/cli/commands/`
+2. Import and register with Click group in appropriate location
+3. Use `@click.command()` decorator with type hints
+4. Add Rich console output instead of print statements
+
+### Add a New Model
+1. Add dataclass to `pypet/models.py` with type hints
+2. Implement `to_dict()` and `from_dict()` for TOML serialization
+3. Add tests in `tests/test_models.py`
+4. Update Storage class if persistence needed
 
 ## Storage Guidelines
 - **Default Location**: `~/.config/pypet/snippets.toml`
@@ -130,3 +151,10 @@ from pypet.storage import Storage
 - Sanitize command execution with proper quoting
 - Never commit secrets or sensitive data
 - Validate alias names and snippet IDs for shell safety
+
+## Common Anti-Patterns to Avoid
+- Using `print()` statements - use Rich console instead
+- Bare `except:` clauses - catch specific exceptions
+- Mutable default arguments in functions
+- Using `==` for None comparisons - use `is None`
+
