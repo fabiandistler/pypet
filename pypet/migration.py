@@ -116,10 +116,9 @@ class SnippetMigrator:
 
                     if interactive:
                         print(f"✓ Migrated {snippet_id[:8]}")
-                else:
-                    # dry run: do not increment count, but optionally show what would happen
-                    if interactive:
-                        print(f"✓ (dry-run) would migrate {snippet_id[:8]}")
+                # dry run: do not increment count, but optionally show what would happen
+                elif interactive:
+                    print(f"✓ (dry-run) would migrate {snippet_id[:8]}")
 
             except Exception as e:
                 error_msg = f"Failed to migrate {snippet_id}: {e!s}"
