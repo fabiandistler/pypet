@@ -1,6 +1,6 @@
 [project]
 name = "pypet-cli"
-version = "0.6.1"
+version = "0.6.2"
 description = "A modern command-line snippet manager with Git synchronization, clipboard integration, and parameterized commands"
 readme = "README.md"
 license = {text = "MIT"}
@@ -136,10 +136,9 @@ ignore = [
     # Other
     "B904",    # raise without from - not always necessary
     "ERA001",  # Commented-out code - sometimes useful for documentation
-    "T201",    # print statements - OK for CLI output
+    "T201"    # print statements - OK for CLI output
 
-    # Bei Bedarf aktivieren:
-    # "T20",   # print-Statements verbieten (auskommentieren wenn gewünscht)
+
 ]
 
 # Automatische Fixes
