@@ -57,9 +57,13 @@ jobs:
       run: |
         uv pip install --system -e ".[dev]"
 
-    - name: Run ruff
+    - name: Run ruff check
       run: |
-        python -m ruff check pypet tests
+        uv run ruff check pypet tests
+
+    - name: Run ruff format check
+      run: |
+        uv run ruff format --check pypet tests
 
   build:
     runs-on: ubuntu-latest
@@ -80,4 +84,3 @@ jobs:
     - name: Build package
       run: |
         python -m build
-
