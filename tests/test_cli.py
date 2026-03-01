@@ -243,7 +243,7 @@ def test_save_last_no_history(runner, mock_storage):
     ):
         result = runner.invoke(main, ["save-last"])
         assert result.exit_code == 0
-        assert "Could not find shell history file" in result.output
+        assert "No commands found in history" in result.output
 
 
 def test_edit_file_option(runner, mock_storage):

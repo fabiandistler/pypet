@@ -81,7 +81,7 @@ class InteractiveParameterPrompt:
         Returns:
             Dictionary mapping parameter names to user-provided values
         """
-        values = {}
+        values: dict[str, str] = {}
 
         if not params:
             return values
