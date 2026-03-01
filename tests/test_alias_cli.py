@@ -10,6 +10,13 @@ from pypet.cli import main
 from pypet.storage import Storage
 
 
+@pytest.fixture(autouse=True)
+def disable_auto_sync():
+    """Disable auto-sync for all tests to prevent hanging."""
+    with patch("pypet.cli.main._auto_sync_if_enabled"):
+        yield
+
+
 @pytest.fixture
 def runner():
     """Create a CLI runner for testing."""

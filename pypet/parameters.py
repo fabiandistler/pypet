@@ -83,7 +83,7 @@ class ParameterValidator:
         """
         errors = []
 
-        for name, param in parameters.items():
+        for name, _param in parameters.items():
             is_valid, error = ParameterValidator.validate_parameter_name(name)
             if not is_valid:
                 errors.append(error)
