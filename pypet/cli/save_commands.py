@@ -22,10 +22,12 @@ from .main import _auto_sync_if_enabled, _parse_parameters, main
     "-p",
     help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
 )
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 def save_clipboard(
     description: str | None = None,
     tags: str | None = None,
     params: str | None = None,
+    yes: bool = False,
 ) -> None:
     """Save current clipboard content as a snippet."""
     try:
@@ -39,14 +41,26 @@ def save_clipboard(
         command = command.strip()
         cli_main.console.print(f"[blue]Clipboard content:[/blue] {command}")
 
-        # Ask for confirmation
-        if not Confirm.ask("Save this as a snippet?"):
-            cli_main.console.print("[yellow]Cancelled.[/yellow]")
-            return
+        # Ask for confirmation (skip if --yes flag is used)
+        if not yes:
+            try:
+                should_save = Confirm.ask("Save this as a snippet?")
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
+            if not should_save:
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
 
         # Prompt for description if not provided
         if not description:
-            description = Prompt.ask("Description", default="Snippet from clipboard")
+            try:
+                description = Prompt.ask(
+                    "Description", default="Snippet from clipboard"
+                )
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
 
         # Parse tags and parameters
         tag_list = [t.strip() for t in tags.split(",")] if tags else []
@@ -80,152 +94,214 @@ def save_clipboard(
 @click.option(
     "--lines", "-n", default=1, help="Number of history lines to show (default: 1)"
 )
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 def save_last(
     description: str | None = None,
     tags: str | None = None,
     params: str | None = None,
     lines: int = 1,
+    yes: bool = False,
 ) -> None:
-    """Save the last command(s) from shell history as a snippet."""
+    """Save the last command(s) from shell history as a snippet. [experimental]"""
+    cli_main.console.print(
+        "[yellow]⚠️  Experimental Feature - save-last has limitations:[/yellow]"
+    )
+    cli_main.console.print("  • Only reads from history file (~/.bash_history)")
+    cli_main.console.print("  • Run 'history -a' before to save current session")
+    cli_main.console.print("  • Doesn't capture commands from current shell session")
+    cli_main.console.print()
+
     try:
-        # Determine which shell we're using
         shell = os.environ.get("SHELL", "")
-        recent_lines = []
+        recent_lines: list[str] = []
 
-        # Strategy 1: Try to read from shell's in-memory history (works in interactive shells)
-        # This is more reliable for getting the most recent commands
-        if "bash" in shell:
-            try:
-                # Use HISTFILE or default to ~/.bash_history
-                histfile = os.environ.get(
-                    "HISTFILE", str(Path.home() / ".bash_history")
-                )
-
-                # Run bash with -i (interactive) to access history builtin
-                # Use 'history -a' to append current session history to file first
-                # Then read a generous number of lines to ensure we get enough
-                result = subprocess.run(
-                    [
-                        "bash",
-                        "-i",
-                        "-c",
-                        f"history -a 2>/dev/null; history {lines + 50}",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=2,
-                    check=False,
-                    env={**os.environ, "HISTFILE": histfile},
-                )
-
-                if result.returncode == 0 and result.stdout:
-                    # Parse bash history output format: "  123  command here"
-                    for line in result.stdout.strip().split("\n"):
-                        # Remove leading line numbers and whitespace
-                        parts = line.strip().split(None, 1)
-                        if len(parts) >= 2 and parts[0].isdigit():
-                            cmd = parts[1].strip()
-                            if cmd:
-                                recent_lines.append(cmd)
-            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
-                # Fall back to file reading if shell history command fails
-                pass
-
-        elif "zsh" in shell:
-            try:
-                # Use HISTFILE or default to ~/.zsh_history
-                histfile = os.environ.get("HISTFILE", str(Path.home() / ".zsh_history"))
-
-                # Run zsh with -i (interactive) to access fc builtin
-                # fc -l lists history, -n suppresses line numbers, negative number for last N lines
-                result = subprocess.run(
-                    ["zsh", "-i", "-c", f"fc -W 2>/dev/null; fc -ln -{lines + 50}"],
-                    capture_output=True,
-                    text=True,
-                    timeout=2,
-                    check=False,
-                    env={**os.environ, "HISTFILE": histfile},
-                )
-
-                if result.returncode == 0 and result.stdout:
-                    for line in result.stdout.strip().split("\n"):
-                        cmd = line.strip()
-                        if cmd:
-                            recent_lines.append(cmd)
-            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
-                # Fall back to file reading
-                pass
-
-        # Strategy 2: Fall back to reading from history file directly
-        if not recent_lines:
-            history_file = None
-
-            # Check common history file locations
+        def _get_history_file() -> Path | None:
+            """Find the history file to use."""
             possible_files = [
-                os.environ.get("HISTFILE"),  # User's custom HISTFILE
+                os.environ.get("HISTFILE"),
                 Path.home() / ".bash_history",
                 Path.home() / ".zsh_history",
                 Path.home() / ".history",
             ]
-
             for hist_file in possible_files:
                 if hist_file and Path(hist_file).exists():
-                    history_file = Path(hist_file)
-                    break
+                    return Path(hist_file)
+            return None
 
+        def _parse_bash_history_output(output: str) -> list[str]:
+            """Parse bash history output into a list of commands."""
+            cmds = []
+            for line in output.strip().split("\n"):
+                parts = line.strip().split(None, 1)
+                if len(parts) >= 2 and parts[0].isdigit():
+                    cmd = parts[1].strip()
+                    if cmd:
+                        cmds.append(cmd)
+            return list(reversed(cmds))
+
+        def _read_from_shell() -> list[str]:
+            """Read history using shell's interactive mode."""
+            histfile = _get_history_file()
+            if not histfile:
+                return []
+
+            try:
+                if "bash" in shell:
+                    result = subprocess.run(
+                        [
+                            "bash",
+                            "-i",
+                            "-c",
+                            f"history -a 2>/dev/null; source ~/.bashrc 2>/dev/null; history -r 2>/dev/null; history {lines + 50}",
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=3,
+                        check=False,
+                        env={**os.environ, "HISTFILE": str(histfile)},
+                    )
+                    if result.returncode == 0 and result.stdout:
+                        return _parse_bash_history_output(result.stdout)
+
+                elif "zsh" in shell:
+                    result = subprocess.run(
+                        ["zsh", "-i", "-c", f"fc -W 2>/dev/null; fc -ln -{lines + 50}"],
+                        capture_output=True,
+                        text=True,
+                        timeout=3,
+                        check=False,
+                        env={**os.environ, "HISTFILE": str(histfile)},
+                    )
+                    if result.returncode == 0 and result.stdout:
+                        cmds = [
+                            line.strip()
+                            for line in result.stdout.strip().split("\n")
+                            if line.strip()
+                        ]
+                        return list(reversed(cmds))
+
+                return []
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+                return []
+
+        def _read_with_fc() -> list[str]:
+            """Read history using fc builtin (alternative method)."""
+            histfile = _get_history_file()
+            if not histfile:
+                return []
+
+            try:
+                if "bash" in shell:
+                    result = subprocess.run(
+                        [
+                            "bash",
+                            "-i",
+                            "-c",
+                            f"fc -l -{lines + 50} 2>/dev/null || history {lines + 50}",
+                        ],
+                        capture_output=True,
+                        text=True,
+                        timeout=3,
+                        check=False,
+                        env={**os.environ, "HISTFILE": str(histfile)},
+                    )
+                    if result.returncode == 0 and result.stdout:
+                        return _parse_bash_history_output(result.stdout)
+
+                elif "zsh" in shell:
+                    result = subprocess.run(
+                        ["zsh", "-i", "-c", f"fc -ln -{lines + 50}"],
+                        capture_output=True,
+                        text=True,
+                        timeout=3,
+                        check=False,
+                        env={**os.environ, "HISTFILE": str(histfile)},
+                    )
+                    if result.returncode == 0 and result.stdout:
+                        cmds = [
+                            line.strip()
+                            for line in result.stdout.strip().split("\n")
+                            if line.strip()
+                        ]
+                        return list(reversed(cmds))
+
+                return []
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+                return []
+
+        def _read_from_file() -> list[str]:
+            """Read history directly from file (newest first)."""
+            history_file = _get_history_file()
             if not history_file:
-                cli_main.console.print(
-                    "[red]Error:[/red] Could not find shell history file"
-                )
-                cli_main.console.print(
-                    "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
-                )
-                cli_main.console.print(
-                    "[blue]Info:[/blue] Looked for: ~/.bash_history, ~/.zsh_history, ~/.history"
-                )
-                return
+                return []
 
-            # Read last lines from history file
             try:
                 with history_file.open(encoding="utf-8", errors="ignore") as f:
                     all_lines = f.readlines()
-            except Exception as e:
-                cli_main.console.print(f"[red]Error reading history file:[/red] {e}")
-                cli_main.console.print(
-                    "[yellow]Tip:[/yellow] Try using 'pypet save-clipboard' instead"
-                )
-                return
 
-            if not all_lines:
-                cli_main.console.print("[red]Error:[/red] History file is empty")
-                return
-
-            # Get last N non-empty lines
-            for line in reversed(all_lines):
-                cleaned_line = line.strip()
-                if cleaned_line and not cleaned_line.startswith(
-                    "#"
-                ):  # Skip comments and empty lines
-                    # Handle zsh extended history format: : 1234567890:0;command
+                commands = []
+                for line in reversed(all_lines):
+                    cleaned_line = line.strip()
+                    if not cleaned_line or cleaned_line.startswith("#"):
+                        continue
                     if cleaned_line.startswith(": ") and ";" in cleaned_line:
                         cleaned_line = cleaned_line.split(";", 1)[1]
-                    recent_lines.append(cleaned_line)
-                    if (
-                        len(recent_lines) >= lines + 50
-                    ):  # Get extra to filter pypet commands
-                        break
+                    if cleaned_line:
+                        commands.append(cleaned_line)
+                        if len(commands) >= lines + 50:
+                            break
+                return commands
+            except Exception:
+                return []
+
+        def _deduplicate_commands(
+            shell_cmds: list[str], file_cmds: list[str]
+        ) -> list[str]:
+            """Remove duplicates, preferring shell commands (more recent)."""
+            seen: set[str] = set()
+            result: list[str] = []
+
+            for cmd in shell_cmds:
+                cmd_lower = cmd.lower()
+                if cmd_lower not in seen:
+                    seen.add(cmd_lower)
+                    result.append(cmd)
+
+            for cmd in file_cmds:
+                cmd_lower = cmd.lower()
+                if cmd_lower not in seen:
+                    seen.add(cmd_lower)
+                    result.append(cmd)
+
+            return result
+
+        file_lines = _read_from_file()
+        shell_lines = _read_from_shell()
+        if not shell_lines:
+            shell_lines = _read_with_fc()
+
+        if shell_lines and file_lines:
+            recent_lines = _deduplicate_commands(shell_lines, file_lines)
+        elif shell_lines:
+            recent_lines = shell_lines
+        else:
+            recent_lines = file_lines
 
         if not recent_lines:
             cli_main.console.print("[red]Error:[/red] No commands found in history")
+            cli_main.console.print(
+                "[yellow]Note:[/yellow] Only commands saved to history file are available."
+            )
+            cli_main.console.print(
+                "Run 'history -a' to save current session, or use 'pypet save-clipboard'"
+            )
             return
 
-        # Filter out pypet commands and prepare final list
         commands = []
         for command in recent_lines:
-            # Skip pypet commands to avoid recursion
-            if not command.startswith("pypet") and command.strip():
+            if command.strip() and "pypet" not in command.lower():
                 commands.append(command.strip())
-                if len(commands) >= lines:  # We have enough commands
+                if len(commands) >= lines:
                     break
 
         if not commands:
@@ -233,11 +309,10 @@ def save_last(
                 "[red]Error:[/red] No valid commands found in recent history"
             )
             cli_main.console.print(
-                "[yellow]Tip:[/yellow] Make sure you run some commands first"
+                "[yellow]Note:[/yellow] Only commands saved to history file are available."
             )
             return
 
-        # Show the commands and let user choose
         if len(commands) == 1:
             command = commands[0]
         else:
@@ -245,27 +320,44 @@ def save_last(
             for i, cmd in enumerate(commands, 1):
                 cli_main.console.print(f"  {i}. {cmd}")
 
-            choice = Prompt.ask(
-                "Which command to save?",
-                choices=[str(i) for i in range(1, len(commands) + 1)],
-                default="1",
-            )
+            try:
+                choice = Prompt.ask(
+                    "Which command to save?",
+                    choices=[str(i) for i in range(1, len(commands) + 1)],
+                    default="1",
+                )
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
             command = commands[int(choice) - 1]
 
         cli_main.console.print(f"[blue]Selected command:[/blue] {command}")
 
-        # Ask for confirmation
-        if not Confirm.ask("Save this as a snippet?"):
-            cli_main.console.print("[yellow]Cancelled.[/yellow]")
-            return
+        # Ask for confirmation (skip if --yes flag is used)
+        if not yes:
+            try:
+                should_save = Confirm.ask("Save this as a snippet?")
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
+            if not should_save:
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
 
-        # Prompt for description if not provided
+        # Prompt for description if not provided (skip if --yes flag is used and no description)
         if not description:
-            description = Prompt.ask(
-                "Description", default=f"Command from history: {command[:50]}..."
-            )
+            if yes:
+                description = f"Command from history: {command[:50]}..."
+            else:
+                try:
+                    description = Prompt.ask(
+                        "Description",
+                        default=f"Command from history: {command[:50]}...",
+                    )
+                except (EOFError, KeyboardInterrupt):
+                    cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                    return
 
-        # Parse tags and parameters
         tag_list = [t.strip() for t in tags.split(",")] if tags else []
         parameters = _parse_parameters(params) if params else None
 
@@ -279,7 +371,6 @@ def save_last(
             f"[green]Added new snippet with ID:[/green] {snippet_id}"
         )
 
-        # Auto-sync if enabled
         _auto_sync_if_enabled()
 
     except subprocess.TimeoutExpired:

@@ -185,6 +185,8 @@ pypet save-last -d "Build command" -t "build,make"
 
 The `save-last` command works with bash, zsh, and other popular shells. It reads from your shell history file and lets you save recent commands as snippets.
 
+> **⚠️ Note:** This feature has limitations. Bash only writes to the history file when the shell exits or when you run `history -a`. Commands in your current session may not be available. Run `history -a && pypet save-last` for best results.
+
 ### Shell Aliases
 
 `pypet` can create persistent shell aliases from your snippets, making frequently-used commands instantly accessible without needing to run `pypet exec`.

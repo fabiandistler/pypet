@@ -148,7 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### New Commands (Issue #8)
 
 - **New `pypet save-clipboard` command** - Save clipboard content as a snippet
-- **New `pypet save-last` command** - Save the last command(s) from shell history
+- **New `pypet save-last` command (experimental)** - Save the last command(s) from shell history
 - **Cross-shell history support** - Works with bash, zsh, and other shells
 - **Interactive parameter extraction** - Automatically prompts for parameter descriptions
 

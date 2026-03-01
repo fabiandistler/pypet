@@ -85,7 +85,7 @@ class ParameterValidator:
 
         for name, _param in parameters.items():
             is_valid, error = ParameterValidator.validate_parameter_name(name)
-            if not is_valid:
+            if not is_valid and error:
                 errors.append(error)
 
         return len(errors) == 0, errors
@@ -262,7 +262,7 @@ class ParameterMigrator:
         Returns:
             List of tuples (snippet_id, migrated_snippet_dict, migration_notes)
         """
-        results = []
+        results: list[tuple[str, dict, list[str]]] = []
 
         for snippet_id, snippet_dict in snippets:
             if "command" not in snippet_dict:

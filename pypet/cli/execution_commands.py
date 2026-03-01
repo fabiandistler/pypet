@@ -225,12 +225,13 @@ def exec(
 
         if edit:
             try:
-                final_command = click.edit(final_command)
-                if final_command is None:
+                edited = click.edit(final_command)
+                if edited is None:
                     cli_main.console.print(
                         "[yellow]Command execution cancelled[/yellow]"
                     )
                     return
+                final_command = edited
             except click.ClickException:
                 # Fallback for non-interactive environments (like tests)
                 cli_main.console.print(

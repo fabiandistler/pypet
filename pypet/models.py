@@ -5,6 +5,7 @@ Data models for pypet snippets
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
 
 from .parameters import ParameterDetector, ParameterSubstitutor
 
@@ -81,9 +82,9 @@ class Snippet:
         if self.updated_at is None:
             self.updated_at = self.created_at
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert snippet to dictionary for TOML storage."""
-        result = {
+        result: dict[str, Any] = {
             "command": self.command,
             "description": self.description,
             "tags": self.tags or [],
