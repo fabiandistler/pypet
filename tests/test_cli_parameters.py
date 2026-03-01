@@ -14,8 +14,8 @@ class TestInteractiveParameterPrompt:
     def test_prompt_detects_parameters_from_command(self, monkeypatch):
         """Test that parameters are detected from command."""
         command = "docker run {{image}} -p {{port}}"
-        monkeypatch.setattr("click.prompt", lambda *args, **kwargs: "")
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.prompt", lambda *_, **__: "")
+        monkeypatch.setattr("click.confirm", lambda *_, **__: False)
         params = InteractiveParameterPrompt.prompt_for_parameters(
             command, existing_params={}
         )
@@ -25,8 +25,8 @@ class TestInteractiveParameterPrompt:
     def test_prompt_raises_error_on_invalid_command(self, monkeypatch):
         """Test that invalid command raises error."""
         command = "docker run {{123invalid}}"
-        monkeypatch.setattr("click.prompt", lambda *args, **kwargs: "")
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.prompt", lambda *_, **__: "")
+        monkeypatch.setattr("click.confirm", lambda *_, **__: False)
         with pytest.raises(ValueError):
             InteractiveParameterPrompt.prompt_for_parameters(command)
 
@@ -36,15 +36,15 @@ class TestInteractiveParameterPrompt:
             "image": ParameterMetadata("image"),
             "port": ParameterMetadata("port", default="8080"),
         }
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.confirm", lambda *_, **__: False)
         result = InteractiveParameterPrompt.confirm_parameters(params)
         assert isinstance(result, bool)
 
     def test_prompt_for_empty_parameters(self, monkeypatch):
         """Test prompting for no parameters."""
         params = {}
-        monkeypatch.setattr("click.prompt", lambda *args, **kwargs: "")
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.prompt", lambda *_, **__: "")
+        monkeypatch.setattr("click.confirm", lambda *_, **__: False)
         result = InteractiveParameterPrompt.prompt_for_parameters(
             "ls -la", existing_params=params
         )
@@ -57,8 +57,8 @@ class TestParameterEditorCLI:
     def test_editor_handles_empty_parameters(self, monkeypatch):
         """Test editor with no parameters."""
         params = {}
-        monkeypatch.setattr("click.prompt", lambda *args, **kwargs: "")
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.prompt", lambda *_, **__: "done")
+        monkeypatch.setattr("click.confirm", lambda *_, **__: False)
         result = ParameterEditorCLI.edit_parameters_prompt(params)
         assert isinstance(result, dict)
 
@@ -68,8 +68,8 @@ class TestParameterEditorCLI:
             "image": ParameterMetadata("image"),
             "port": ParameterMetadata("port", default="8080"),
         }
-        monkeypatch.setattr("click.prompt", lambda *args, **kwargs: "")
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.prompt", lambda *_, **__: "done")
+        monkeypatch.setattr("click.confirm", lambda *_, **__: False)
         result = ParameterEditorCLI.edit_parameters_prompt(params)
         assert "image" in result
         assert "port" in result
