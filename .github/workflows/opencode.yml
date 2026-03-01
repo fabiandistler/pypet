@@ -30,4 +30,4 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         with:
-          model: openrouter/moonshotai/kimi-k2:free
+          model: openrouter/arcee-ai/trinity-large-preview:free
