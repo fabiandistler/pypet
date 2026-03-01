@@ -22,10 +22,12 @@ from .main import _auto_sync_if_enabled, _parse_parameters, main
     "-p",
     help="Parameters in format: name[=default][:description],... Example: host=localhost:The host,port=8080:Port number",
 )
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 def save_clipboard(
     description: str | None = None,
     tags: str | None = None,
     params: str | None = None,
+    yes: bool = False,
 ) -> None:
     """Save current clipboard content as a snippet."""
     try:
@@ -39,10 +41,16 @@ def save_clipboard(
         command = command.strip()
         cli_main.console.print(f"[blue]Clipboard content:[/blue] {command}")
 
-        # Ask for confirmation
-        if not Confirm.ask("Save this as a snippet?"):
-            cli_main.console.print("[yellow]Cancelled.[/yellow]")
-            return
+        # Ask for confirmation (skip if --yes flag is used)
+        if not yes:
+            try:
+                should_save = Confirm.ask("Save this as a snippet?")
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
+            if not should_save:
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
 
         # Prompt for description if not provided
         if not description:
@@ -80,11 +88,13 @@ def save_clipboard(
 @click.option(
     "--lines", "-n", default=1, help="Number of history lines to show (default: 1)"
 )
+@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 def save_last(
     description: str | None = None,
     tags: str | None = None,
     params: str | None = None,
     lines: int = 1,
+    yes: bool = False,
 ) -> None:
     """Save the last command(s) from shell history as a snippet."""
     try:
@@ -215,23 +225,43 @@ def save_last(
             for i, cmd in enumerate(commands, 1):
                 cli_main.console.print(f"  {i}. {cmd}")
 
-            choice = Prompt.ask(
-                "Which command to save?",
-                choices=[str(i) for i in range(1, len(commands) + 1)],
-                default="1",
-            )
+            try:
+                choice = Prompt.ask(
+                    "Which command to save?",
+                    choices=[str(i) for i in range(1, len(commands) + 1)],
+                    default="1",
+                )
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
             command = commands[int(choice) - 1]
 
         cli_main.console.print(f"[blue]Selected command:[/blue] {command}")
 
-        if not Confirm.ask("Save this as a snippet?"):
-            cli_main.console.print("[yellow]Cancelled.[/yellow]")
-            return
+        # Ask for confirmation (skip if --yes flag is used)
+        if not yes:
+            try:
+                should_save = Confirm.ask("Save this as a snippet?")
+            except (EOFError, KeyboardInterrupt):
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
+            if not should_save:
+                cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                return
 
+        # Prompt for description if not provided (skip if --yes flag is used and no description)
         if not description:
-            description = Prompt.ask(
-                "Description", default=f"Command from history: {command[:50]}..."
-            )
+            if yes:
+                description = f"Command from history: {command[:50]}..."
+            else:
+                try:
+                    description = Prompt.ask(
+                        "Description",
+                        default=f"Command from history: {command[:50]}...",
+                    )
+                except (EOFError, KeyboardInterrupt):
+                    cli_main.console.print("[yellow]Cancelled.[/yellow]")
+                    return
 
         tag_list = [t.strip() for t in tags.split(",")] if tags else []
         parameters = _parse_parameters(params) if params else None

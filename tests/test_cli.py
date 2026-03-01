@@ -218,6 +218,26 @@ def test_save_clipboard_with_options(runner, mock_storage):
         assert "Added new snippet with ID" in result.output
 
 
+def test_save_clipboard_yes_flag(runner, mock_storage):
+    """Test saving from clipboard with --yes flag skips confirmation."""
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.save_commands.pyperclip.paste", return_value="git status"),
+    ):
+        result = runner.invoke(
+            main,
+            [
+                "save-clipboard",
+                "--yes",
+                "--description",
+                "Git status check",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Added new snippet with ID" in result.output
+        assert "Save this as a snippet?" not in result.output
+
+
 def test_save_last_command(runner, mock_storage):
     """Test saving from shell history."""
     # Mock a history file with some commands
@@ -244,6 +264,29 @@ def test_save_last_no_history(runner, mock_storage):
         result = runner.invoke(main, ["save-last"])
         assert result.exit_code == 0
         assert "No commands found in history" in result.output
+
+
+def test_save_last_yes_flag(runner, mock_storage):
+    """Test saving from history with --yes flag skips confirmation."""
+    history_content = "ls -la\ngit status\npypet list\necho hello\n"
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pathlib.Path.open", mock_open(read_data=history_content)),
+    ):
+        result = runner.invoke(
+            main,
+            [
+                "save-last",
+                "--yes",
+                "--description",
+                "List files",
+            ],
+        )
+        assert result.exit_code == 0
+        assert "Added new snippet with ID" in result.output
+        assert "Save this as a snippet?" not in result.output
 
 
 def test_edit_file_option(runner, mock_storage):
