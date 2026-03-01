@@ -5,6 +5,15 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-03-01
+
+### 🐛 Bug Fixes & Improvements
+
+- **CLI tests no longer hang** – auto-sync is disabled during tests to avoid slow Git repo lookups.
+- **Migration dry-run now reports zero migrations** and provides a clearer message.
+- **General test suite performance improvements** – all 199 tests run in ≈4 seconds.
+- **CI workflow caching suggestion** added (future improvement).
+
 ## [0.6.0] - 2025-02-28
 
 ### ⚠️ BREAKING CHANGES

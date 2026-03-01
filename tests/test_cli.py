@@ -9,6 +9,13 @@ from pypet.cli import main
 from pypet.storage import Storage
 
 
+@pytest.fixture(autouse=True)
+def disable_auto_sync():
+    """Disable auto-sync for all tests to prevent hanging."""
+    with patch("pypet.cli.main._auto_sync_if_enabled"):
+        yield
+
+
 @pytest.fixture
 def runner():
     """Create a CLI runner for testing."""
@@ -461,9 +468,7 @@ def test_list_with_long_command(runner, mock_storage):
     long_command = "docker run --name my-container -e ENV_VAR=value -p 8080:80 -v /host/path:/container/path --restart unless-stopped --network my-network my-image:latest"
 
     mock_storage.add_snippet(
-        long_command,
-        "Long docker command example",
-        ["docker", "container"]
+        long_command, "Long docker command example", ["docker", "container"]
     )
 
     with patch("pypet.cli.main_module.storage", mock_storage):
@@ -480,9 +485,7 @@ def test_search_with_long_command(runner, mock_storage):
     long_command = "kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml"
 
     mock_storage.add_snippet(
-        long_command,
-        "Deploy nginx ingress controller",
-        ["kubernetes", "k8s"]
+        long_command, "Deploy nginx ingress controller", ["kubernetes", "k8s"]
     )
 
     with patch("pypet.cli.main_module.storage", mock_storage):

@@ -2,7 +2,9 @@
 Migration utilities for upgrading snippets from old {param} syntax to new {{param}} syntax.
 """
 
+import shutil
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from .models import Snippet
@@ -110,11 +112,14 @@ class SnippetMigrator:
                         parameters=migrated_snippet.parameters,
                         alias=migrated_snippet.alias,
                     )
+                    migrated_count += 1
 
-                migrated_count += 1
-
-                if interactive:
-                    print(f"✓ Migrated {snippet_id[:8]}")
+                    if interactive:
+                        print(f"✓ Migrated {snippet_id[:8]}")
+                else:
+                    # dry run: do not increment count, but optionally show what would happen
+                    if interactive:
+                        print(f"✓ (dry-run) would migrate {snippet_id[:8]}")
 
             except Exception as e:
                 error_msg = f"Failed to migrate {snippet_id}: {e!s}"
@@ -124,7 +129,11 @@ class SnippetMigrator:
 
         return {
             "status": "success",
-            "message": f"Successfully migrated {migrated_count} snippet(s)",
+            "message": (
+                f"Successfully migrated {migrated_count} snippet(s)"
+                if not dry_run
+                else "Dry run complete, no snippets were modified"
+            ),
             "migrated_count": migrated_count,
             "total_snippets": len(self.storage.list_snippets()),
             "errors": errors,
@@ -141,9 +150,6 @@ class SnippetMigrator:
         try:
             backup_dir = self.storage.config_path.parent / "backups"
             backup_dir.mkdir(parents=True, exist_ok=True)
-
-            import shutil
-            from datetime import datetime
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_path = backup_dir / f"snippets_backup_{timestamp}.toml"
