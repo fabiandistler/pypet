@@ -5,6 +5,45 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-03-02
+
+## [0.6.4] - 2026-03-02
+
+### 🐛 Bug Fixes
+
+- **exec edit now works correctly** - Fixed capturing edited command from click.edit()
+
+### 🔧 Technical
+
+- **Dynamic version** - Version now read from pyproject.toml via importlib.metadata
+
+## [0.6.3] - 2026-03-02
+
+### ✨ Added
+
+- **Release infrastructure** - Added Makefile targets (`release-patch`, `release-minor`, `release-major`)
+- **Automated release script** - New `scripts/release.sh` for version bumping and tagging
+
+### 🔧 Technical
+
+- **Type hint improvements** - Added proper type annotations throughout codebase
+
+## [0.6.2] - 2026-03-02
+
+### ✨ Added
+
+- **`--yes/-y` flag for save-clipboard** - Skip confirmation prompt
+- **`--yes/-y` flag for save-last** - Skip confirmation prompt
+
+### 🐛 Bug Fixes
+
+- **Issue #43 - save-last command overhaul**:
+  - Major rewrite with multiple history reading methods
+  - Better deduplication of commands
+  - Added experimental feature warning
+  - Improved error handling for EOFError/KeyboardInterrupt
+  - Now filters out pypet commands properly
+
 ## [0.6.1] - 2026-03-01
 
 ### 🐛 Bug Fixes & Improvements
