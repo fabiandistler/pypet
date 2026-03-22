@@ -104,6 +104,38 @@ pypet sync push                    # Push to remote
 pypet sync sync                    # Full sync (commit + pull + push)
 ```
 
+### Shell Completion
+
+`pypet` supports shell completion for Bash, Zsh, and Fish. This feature allows you to use the **Tab** key to automatically complete commands, subcommands, and options.
+
+To enable shell completion:
+
+#### Bash
+
+Add the following to your `~/.bashrc`:
+
+```bash
+eval "$(_PYPET_COMPLETE=bash_source pypet)"
+```
+
+#### Zsh
+
+Add the following to your `~/.zshrc`:
+
+```zsh
+eval "$(_PYPET_COMPLETE=zsh_source pypet)"
+```
+
+#### Fish
+
+Add the following to your `~/.config/fish/completions/pypet.fish`:
+
+```fish
+_PYPET_COMPLETE=fish_source pypet | source
+```
+
+---
+
 ### Parameterized Snippets
 
 You can create snippets with customizable parameters:
@@ -239,12 +271,14 @@ source ~/.config/pypet/aliases.sh
 #### How Aliases Work
 
 - **Simple snippets** (no parameters): Created as regular shell aliases
+
   ```bash
   pypet new "ls -la" -a ll
   # Generates: alias ll='ls -la'
   ```
 
 - **Parameterized snippets**: Created as shell functions that call `pypet exec`
+
   ```bash
   pypet new "ssh {{user}}@{{host}}" -a myssh
   # Generates a function that prompts for parameters
