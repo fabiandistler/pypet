@@ -269,12 +269,14 @@ source ~/.config/pypet/aliases.sh
 #### How Aliases Work
 
 - **Simple snippets** (no parameters): Created as regular shell aliases
+
   ```bash
   pypet new "ls -la" -a ll
   # Generates: alias ll='ls -la'
   ```
 
 - **Parameterized snippets**: Created as shell functions that call `pypet exec`
+
   ```bash
   pypet new "ssh {{user}}@{{host}}" -a myssh
   # Generates a function that prompts for parameters
