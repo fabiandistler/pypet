@@ -56,8 +56,7 @@ git tag -a "v$NEW_VERSION" -m "v$NEW_VERSION"
 if [[ "$NO_PUSH" == "false" ]]; then
     echo "=== Pushing ==="
     git push origin main
-    git push origin "v$NEW_VERSION"
-    git push origin --tags
+    git push origin tag "v$NEW_VERSION"
     echo "Released v$NEW_VERSION"
 else
     echo "Skipped push (--no-push flag)"
