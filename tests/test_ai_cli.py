@@ -31,7 +31,7 @@ def test_gen_help_shows_basic_flow(runner):
     result = runner.invoke(main, ["gen", "--help"])
 
     assert result.exit_code == 0
-    assert "OpenRouter" in result.output
+    assert "model" in result.output
     assert "review table" in result.output.lower()
     assert "Examples:" in result.output
 
