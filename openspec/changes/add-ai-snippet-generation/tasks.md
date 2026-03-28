@@ -1,8 +1,8 @@
 ## 1. Config Updates
 
-- [ ] 1.1 Update `pypet/config.py` to add `openrouter_api_key` and `ai_model` properties
-- [ ] 1.2 Add defaults for `ai_model` (e.g. `google/gemini-2.5-flash`)
-- [ ] 1.3 Add config helpers to resolve API key and model with ENV precedence (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`) before config values
+- [x] 1.1 Update `pypet/config.py` to add `openrouter_api_key` and `ai_model` properties
+- [x] 1.2 Add defaults for `ai_model` (e.g. `google/gemini-2.5-flash`)
+- [x] 1.3 Add config helpers to resolve API key and model with ENV precedence (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`) before config values
 
 ## 2. API Client Implementation
 
