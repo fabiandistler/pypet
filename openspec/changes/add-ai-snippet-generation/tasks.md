@@ -24,7 +24,7 @@
 
 ## 4. Testing
 
-- [ ] 4.1 Write unit tests for config changes in `tests/test_config.py`, including ENV-over-config resolution for API key/model
+- [x] 4.1 Write unit tests for config changes in `tests/test_config.py`, including ENV-over-config resolution for API key/model
 - [x] 4.2 Write mocked tests for `pypet/ai.py` so it doesn't hit the real API, including a case that validates `parameters` with defaults/descriptions
 - [x] 4.3 Write CLI tests for `pypet gen` covering missing-vs-existing API key behavior and save flow
-- [ ] 4.4 Run `make all` to ensure format, lint, and tests pass
+- [x] 4.4 Run `make all` to ensure format, lint, and tests pass
