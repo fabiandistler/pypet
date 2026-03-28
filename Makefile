@@ -75,7 +75,7 @@ dev: install hooks
 	@echo "  - Git hooks are installed and will run on push"
 
 # Run all checks
-all: format lint
+all: format lint type-check clean
 ifndef SKIP_TESTS
 	@$(MAKE) test-quick
 endif
