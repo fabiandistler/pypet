@@ -1,179 +1,169 @@
-# AGENTS.md - Development Guidelines for pypet
+# AGENTS.md - pypet Repository Guide
 
-This file contains development guidelines and commands for agentic coding agents working on the pypet project.
+This file is for agentic coding agents working in this repo. Keep changes small,
+respect the existing codebase, and avoid overwriting user work.
 
-## Development Commands
+## Repository Map
 
-### Package Management
+- `pypet/models.py` - snippet and parameter dataclasses plus TOML conversion.
+- `pypet/storage.py` - snippet persistence, search, and ID generation.
+- `pypet/config.py` - config file handling and environment variable precedence.
+- `pypet/alias_manager.py` - shell alias generation and shell-safety checks.
+- `pypet/cli/` - Click command modules and CLI wiring.
+- `tests/` - pytest suite for models, storage, CLI, sync, aliases, and AI code.
+- `scripts/` - helper scripts for hooks and release automation.
 
-```bash
-uv pip install -e ".[dev]"    # Install dependencies using uv
-make install                  # Install package in development mode
-make dev                      # Set up complete development environment with hooks
-```
+## Setup
 
-### Testing
+- Preferred package manager: `uv`.
+- Install development dependencies with `uv pip install -e ".[dev]"`.
+- Or use `make install` for the same editable install.
+- Use `make dev` to install dependencies and git hooks together.
 
-```bash
-make test                     # Run all tests with verbose output
-make test-quick               # Quick test for CI/hooks (stop on first failure)
-pytest tests/test_models.py                       # Run specific test file
-pytest tests/test_models.py::test_snippet_init    # Run specific test
-```
+## Build and Quality Commands
 
-### Code Quality
+- `make format` - auto-fix code with Ruff (`ruff check --fix .`).
+- `make lint` - run Ruff lint checks (`ruff check .`).
+- `make type-check` - run mypy in best-effort mode.
+- `make all` - run format, lint, type-check, clean, and quick tests.
+- `make clean` - remove build artifacts and caches.
+- `make build` - produce a wheel and sdist with `uv build`.
+- `make cli-test` - smoke test the CLI with `--help` and `list`.
+- `make hooks` - install the pre-push hook from `scripts/install-hooks.sh`.
 
-```bash
-make format                   # Auto-format and fix code with ruff
-make lint                     # Check linting with ruff
-make type-check               # Run type checking with mypy
-make all                      # Run all checks (format + lint + type-check + clean)
-```
+## Testing Commands
 
-### Git Workflow
+- `make test` - full pytest run with verbose output.
+- `make test-quick` - fast failing test pass for hooks and local iteration.
+- Preferred direct test invocation: `uv run python -m pytest ...`.
+- A specific test file: `uv run python -m pytest tests/test_models.py -v`.
+- A specific test function: `uv run python -m pytest tests/test_models.py::test_snippet_init -v`.
+- A single test with short traces: `uv run python -m pytest tests/test_models.py::test_snippet_init -vv --tb=short`.
+- Pattern matching a subset of tests: `uv run python -m pytest tests -k "snippet and not slow" -v`.
+- If the environment is already active, `pytest ...` is fine too.
+- Use `-x` when you want to stop after the first failure.
+- Use `-q` for quieter output and `--tb=short` for concise traces.
 
-```bash
-make hooks                    # Install pre-push git hooks
-SKIP_TESTS=1 git push        # Skip tests in hooks for quick iterations
-```
+## CLI Smoke Testing
 
-## Code Style Guidelines
+- `uv run python -m pypet.cli --help` checks Click wiring and imports.
+- `uv run python -m pypet.cli list` is a quick end-to-end sanity check.
+- For import issues, use `uv run python -c "from pypet import ..."`.
 
-### Python Standards
+## Code Style
 
-- **Python Version**: 3.10+
-- **Package Manager**: Use `uv` for all dependency management
-- **Formatter/Linter**: Ruff handles both formatting and linting
-- **Type Hints**: Enforced via ruff's ANN rules (except self/cls and Any)
-- **Line Length**: 88 characters
-- **Quotes**: Double quotes for strings
-- **Indentation**: 4 spaces per level
+- Target Python 3.10+ and keep compatibility with the versions in `pyproject.toml`.
+- Use Ruff for formatting and linting; line length is 88 characters.
+- Use double quotes for strings unless a case clearly requires otherwise.
+- Prefer 4-space indentation and standard PEP 8 layout.
+- Keep imports ordered as stdlib, third-party, then first-party.
+- Prefer `pathlib.Path` over `os.path` for filesystem work.
+- Avoid wildcard imports and unnecessary local imports.
+- Keep functions short and focused; break up long CLI handlers when they grow.
+- Use type hints in production code; avoid untyped public APIs.
+- Use `Any` only when the data is truly dynamic.
+- In tests, type hints are optional unless they clarify tricky fixtures.
+- Keep docstrings concise and factual; use them to explain intent, not restate code.
 
-### Import Organization (isort)
+## Naming Conventions
 
-```python
-# Standard library imports first
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
+- Classes and dataclasses use `PascalCase`.
+- Functions, methods, variables, and modules use `snake_case`.
+- Constants use `UPPER_SNAKE_CASE`.
+- Private helpers start with `_`.
+- Test names should be descriptive and usually start with `test_`.
+- Keep file names aligned with their primary responsibility.
 
-# Third-party imports next
-import click
-import toml
-from rich.console import Console
+## Data Models and Serialization
 
-# First-party imports last
-from pypet.models import Snippet, Parameter
-from pypet.storage import Storage
-```
+- Models live in `pypet/models.py` and are implemented as `@dataclass` types.
+- Use `to_dict()` and `from_dict()` for TOML round-tripping.
+- Keep snippet timestamps in UTC and serialize them as ISO-8601 strings.
+- Preserve backwards compatibility when changing snippet or parameter formats.
+- Update storage migration helpers when schema changes affect persisted data.
 
-### Naming Conventions
+## Persistence and Config
 
-- **Classes**: PascalCase (e.g., `Snippet`, `Storage`, `AliasManager`)
-- **Functions/Methods**: snake_case (e.g., `add_snippet`, `get_all_parameters`)
-- **Variables**: snake_case (e.g., `snippet_id`, `config_path`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_CONFIG_PATH`)
-- **Private Methods**: Prefix with underscore (e.g., `_load_snippets`)
+- Default snippet storage lives at `~/.config/pypet/snippets.toml`.
+- Default config lives at `~/.config/pypet/config.toml`.
+- Default aliases live at `~/.config/pypet/aliases.sh`.
+- `Storage` and `Config` create parent directories automatically.
+- `Config` resolves `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from the env
+  before falling back to file values.
+- Keep file writes atomic when possible, especially for user-facing state.
 
-### Error Handling
+## CLI Conventions
 
-- Use specific exception types
-- Graceful degradation for file operations
-- Log errors to stderr with context
-- Return boolean success indicators for operations
+- Use Click for command definitions and grouping.
+- Use Rich for user-facing terminal output in CLI code.
+- Keep shared CLI instances in `pypet/cli/main.py` unless there is a strong
+  reason to move them.
+- Prefer interactive prompts when a command can reasonably recover missing input.
+- Avoid adding new `print()` calls in CLI code; use Rich or Click patterns instead.
+- Lower-level modules may still write warnings to stderr when that matches the
+  existing recovery behavior.
 
-## Project Structure
+## Error Handling
 
-### Code Organization
+- Raise specific exceptions instead of bare `except:` blocks.
+- Return `None` or `False` when the caller can handle a missing resource cleanly.
+- Use stderr for recoverable warnings only when that matches existing behavior.
+- Keep file operations atomic when writing user data.
+- Clean up temporary files on failure.
+- Preserve graceful degradation for corrupted or missing TOML files.
+- Do not swallow unexpected exceptions unless there is a deliberate UX reason.
 
-- **Models**: `pypet/models.py` - use `to_dict()` and `from_dict()` for TOML serialization
-- **Storage**: `pypet/storage.py` - handles TOML persistence
-- **CLI**: Organized into submodules under `pypet/cli/` to avoid circular imports
-- **Global Instances**: Shared instances (console, storage, sync_manager) in `cli/main.py`
-- **Dataclasses**: Use `@dataclass` decorator for models with type hints
+## Security and Shell Safety
 
-### CLI Development
+- Validate alias names and snippet IDs before writing shell-friendly output.
+- Quote shell commands with `shlex.quote` when generating aliases.
+- Do not build shell commands from unsanitized user input.
+- Keep shell integration compatible with bash and zsh.
+- Treat configuration, alias, and sync paths under `~/.config/pypet/` as the
+  default locations unless a caller provides a custom path.
 
-- **Framework**: Use Click for all command-line interfaces
-- **Output**: Use Rich for all terminal output formatting (no print statements)
-- **Command Organization**: Group related commands in separate modules
-- **Interactive Mode**: Provide interactive selection when no ID is provided
+## Testing Conventions
 
-## Testing Requirements
+- Put all tests in `tests/`.
+- Use `tmp_path` for filesystem tests.
+- Use small, targeted fixtures instead of heavy setup.
+- Allow plain `assert` statements in tests.
+- Prefer one assertion group per behavior so failures are easy to read.
+- Add regression tests for bugs before or alongside the fix.
+- When changing storage or serialization, test both save and load paths.
 
-- **Location**: All tests in `tests/` directory
-- **Naming**: Use descriptive test names with docstrings
-- **Fixtures**: Use `tmp_path` fixture for file-based tests
-- **Run Specific Tests**:
+## Workflow Notes
 
-  ```bash
-  pytest tests/test_models.py                   # Single file
-  pytest tests/test_models.py::test_name         # Single test
-  pytest tests/ -k "test_name"                  # Pattern match
-  pytest tests/ -x                               # Stop on first failure
-  pytest tests/ --tb=short                       # Short traceback
-  ```
+- Check for existing user changes before editing files and avoid unrelated edits.
+- Run the narrowest useful test set first, then widen only if needed.
+- Update docs or examples when a behavior change affects CLI usage.
+- Keep changes aligned with the repo's current patterns unless there is a clear
+  reason to refactor.
+- If you need to inspect the CLI contract, start with `README.md` and
+  `pyproject.toml`.
 
-## Debugging Tips
+## Rule Files
 
-- **CLI Debugging**: Use `uv run python -m pypet.cli --help` to test CLI
-- **Import Testing**: Test imports with `uv run python -c "from pypet import ..."`
-- **Verbose Tests**: Add `-v` flag to pytest for verbose output
+- No `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` files
+  were present when this guide was written.
+- If any of those files are added later, fold their guidance into this document.
 
-## Common Development Tasks
+## Common Gotchas
 
-### Adding a New CLI Command
+- `make type-check` ends with `|| true`, so it is a signal, not a hard gate.
+- `make format` uses `ruff check --fix .`, not a separate formatter target.
+- The project already has a few low-level stderr warnings; do not replace them
+  with noisy CLI output unless you are improving the UX.
+- Generated artifacts in `build/`, `dist/`, and cache directories should not be
+  edited by hand.
+- Keep shell alias generation safe for both simple aliases and parameterized
+  functions.
 
-1. Create new module in `pypet/cli/commands/`
-2. Import and register with Click group in appropriate location
-3. Use `@click.command()` decorator with type hints
-4. Add Rich console output instead of print statements
+## Quick Reference
 
-### Add a New Model
-
-1. Add dataclass to `pypet/models.py` with type hints
-2. Implement `to_dict()` and `from_dict()` for TOML serialization
-3. Add tests in `tests/test_models.py`
-4. Update Storage class if persistence needed
-
-## Storage Guidelines
-
-- **Default Location**: `~/.config/pypet/snippets.toml`
-- **File Operations**: Use atomic operations with proper error handling
-- **Backup Management**: Automatic backup creation before destructive operations
-- **TOML Format**: Human-readable with proper section organization
-
-## Alias Management
-
-- **Validation**: Use `AliasManager.validate_alias_name()` for shell safety
-- **Function Generation**: Create shell functions for parameterized snippets
-- **File Location**: `~/.config/pypet/aliases.sh`
-
-## Important Notes
-
-- **No Print Statements**: Use Rich console for all output instead of print()
-- **UTC Timestamps**: All datetime operations use UTC timezone
-- **Thread Safety**: Consider thread safety for file operations
-- **Shell Integration**: Ensure shell alias functionality works across bash/zsh
-
-## Development Workflow
-
-1. Run `make dev` to set up environment with hooks
-2. Use `make format` and `make lint` frequently during development
-3. Run `make all` before commit to ensure all checks pass
-4. Pre-push hooks automatically run quality checks
-
-## Security Best Practices
-
-- Validate all user inputs and parameters
-- Set appropriate file permissions for configuration files
-- Sanitize command execution with proper quoting
-- Never commit secrets or sensitive data
-- Validate alias names and snippet IDs for shell safety
-
-## Common Anti-Patterns to Avoid
-
-- Using `print()` statements - use Rich console instead
-- Bare `except:` clauses - catch specific exceptions
-- Mutable default arguments in functions
-- Using `==` for None comparisons - use `is None`
+- Full checks: `make all`
+- Fast checks: `make test-quick`
+- Single test: `uv run python -m pytest tests/test_models.py::test_snippet_init -v`
+- Format/lint: `make format` / `make lint`
+- Type check: `make type-check`
+- Build: `make build`
