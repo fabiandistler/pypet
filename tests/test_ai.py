@@ -290,4 +290,4 @@ def test_generate_snippet_description_normalization(tmp_path):
     with patch("urllib.request.urlopen") as urlopen:
         urlopen.return_value = DummyResponse(json.dumps(openrouter_response))
         out = generate_snippet("prompt", config=cfg)
-        assert out["description"] == "123" # Should be converted to string
+        assert out["description"] == "123"  # Should be converted to string

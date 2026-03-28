@@ -7,14 +7,14 @@ help:
 	@echo "pypet Development Commands:"
 	@echo ""
 	@echo "  make install     Install package in development mode"
-	@echo "  make hooks       Install pre-push git hooks" 
+	@echo "  make hooks       Install pre-push git hooks"
 	@echo "  make test        Run all tests"
 	@echo "  make lint        Run linting checks"
 	@echo "  make format      Auto-format code with ruff"
 	@echo "  make type-check  Run type checking with mypy"
 	@echo "  make clean       Clean build artifacts and cache files"
 	@echo "  make dev         Set up development environment"
-	@echo "  make all         Run all checks (format + lint + test)"
+	@echo "  make all         Run format, lint, type-check, clean, and quick tests"
 	@echo "  make release-patch   Bump patch version and create git tag"
 	@echo "  make release-minor   Bump minor version and create git tag"
 	@echo "  make release-major   Bump major version and create git tag"
@@ -45,8 +45,9 @@ lint:
 
 # Auto-format code
 format:
-	@echo "🔧 Auto-fixing with Ruff..."
-	uv run ruff check --config pyproject.toml --fix .
+	@echo "🔧 Formatting with Ruff..."
+	uv run ruff format pypet tests
+	uv run ruff check --config pyproject.toml --fix pypet tests
 
 # Type checking
 type-check:
@@ -74,7 +75,7 @@ dev: install hooks
 	@echo "  - Run 'make lint' to check linting"
 	@echo "  - Git hooks are installed and will run on push"
 
-# Run all checks
+# Run all checks and cleanup
 all: format lint type-check clean
 ifndef SKIP_TESTS
 	@$(MAKE) test-quick

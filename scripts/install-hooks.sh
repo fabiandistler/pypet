@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Install Git hooks for pypet development
-# Run this script to set up pre-push linting hooks
+# Run this script to set up pre-push checks
 
 set -e
 
@@ -42,13 +42,13 @@ cat > "$HOOKS_DIR/pre-push" << 'EOF'
 #!/bin/bash
 
 # Pre-push hook for pypet
-# Runs linting checks before pushing to prevent CI failures
+# Runs formatting, linting, and test checks before pushing to prevent CI failures
 
-echo "🔍 Running pre-push linting checks..."
+echo "🔍 Running pre-push checks..."
 
 # Check if we're in a git repository and have the right tools
 if ! command -v uv &> /dev/null; then
-    echo "❌ uv not found. Please install uv to run linting checks."
+    echo "❌ uv not found. Please install uv to run pre-push checks."
     echo "   Visit: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
@@ -79,15 +79,15 @@ print_error() {
 
 # Check if there are any Python files to lint
 if ! find pypet tests -name "*.py" -type f | head -1 | grep -q .; then
-    print_warning "No Python files found to lint"
+    print_warning "No Python files found to check"
     exit 0
 fi
 
 # Run Ruff formatting check
 print_status "Running Ruff formatter check..."
-if ! uv run ruff check --config pyproject.toml --fix .; then
+if ! uv run ruff format --check pypet tests; then
     print_error "Ruff formatting check failed!"
-    print_warning "Run 'uv run ruff check --config pyproject.toml --fix .' to fix formatting"
+    print_warning "Run 'uv run ruff format pypet tests' to fix formatting"
     exit 1
 else
     print_success "Ruff formatting check passed ✨"

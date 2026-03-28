@@ -434,7 +434,7 @@ make hooks
 ### Development Commands
 
 ```bash
-# Format code with black
+# Format code with Ruff
 make format
 
 # Check linting with ruff
@@ -443,7 +443,7 @@ make lint
 # Run tests
 make test
 
-# Run all checks (format + lint + test)
+# Run format, lint, type-check, clean, and quick tests
 make all
 
 # Clean build artifacts
@@ -470,9 +470,9 @@ pytest --cov=pypet
 
 Pre-push hooks automatically run before each push:
 
-- Code formatting with `black`
-- Linting with `ruff`
-- Full test suite with `pytest`
+- Code formatting with `ruff format --check`
+- Linting with `ruff check`
+- Quick tests with `pytest -x -q`
 
 To bypass hooks (use sparingly):
 
