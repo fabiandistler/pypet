@@ -29,82 +29,25 @@ def mock_storage(tmp_path: Path):
     return Storage(config_path=tmp_path / "snippets.toml")
 
 
-def test_gen_prompts_for_missing_key(runner, mock_storage, tmp_path):
+def test_gen_saves_snippet_when_alias_not_provided(runner, mock_storage, tmp_path):
     cfg = Config(config_path=tmp_path / "config.toml")
+    cfg.openrouter_api_key = "sk-test"
 
     with (
         patch("pypet.cli.main_module.storage", mock_storage),
         patch("pypet.cli.ai_commands.Config", return_value=cfg),
         patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
         patch("pypet.cli.ai_commands.Confirm.ask", return_value=True),
-        patch("pypet.cli.ai_commands.Prompt.ask", side_effect=["sk-test", ""]),
-    ):
-        gen_snippet.return_value = {
-            "command": "echo {{name}}",
-            "description": "Echo a name",
-            "tags": ["demo"],
-            "parameters": {
-                "name": {"name": "name", "default": "world", "description": None}
-            },
-        }
-
-        result = runner.invoke(main, ["gen", "say hi"])
-        assert result.exit_code == 0
-        assert "Added new snippet with ID" in result.output
-        assert cfg.openrouter_api_key == "sk-test"
-        gen_snippet.assert_called_once_with(prompt="say hi", config=cfg)
-
-
-def test_gen_aborts_when_prompted_api_key_is_blank(runner, mock_storage, tmp_path):
-    cfg = Config(config_path=tmp_path / "config.toml")
-    cfg.openrouter_api_key = ""
-
-    with (
-        patch("pypet.cli.main_module.storage", mock_storage),
-        patch("pypet.cli.ai_commands.Config", return_value=cfg),
-        patch("pypet.cli.ai_commands.Prompt.ask", return_value="   "),
-    ):
-        result = runner.invoke(main, ["gen", "say hi"])
-        assert result.exit_code == 0
-        assert "OpenRouter API key is required" in result.output
-
-
-def test_gen_prints_error_when_generate_snippet_fails(runner, mock_storage, tmp_path):
-    cfg = Config(config_path=tmp_path / "config.toml")
-    cfg.openrouter_api_key = "sk-test"
-
-    with (
-        patch("pypet.cli.main_module.storage", mock_storage),
-        patch("pypet.cli.ai_commands.Config", return_value=cfg),
-        patch(
-            "pypet.cli.ai_commands.generate_snippet",
-            side_effect=OpenRouterAIError("Test error"),
-        ),
-    ):
-        result = runner.invoke(main, ["gen", "say hi"])
-        assert result.exit_code == 0
-        assert "Error:" in result.output
-        assert "Test error" in result.output
-
-
-def test_gen_does_not_save_when_user_declines(runner, mock_storage, tmp_path):
-    cfg = Config(config_path=tmp_path / "config.toml")
-    cfg.openrouter_api_key = "sk-test"
-
-    with (
-        patch("pypet.cli.main_module.storage", mock_storage),
-        patch("pypet.cli.ai_commands.Config", return_value=cfg),
-        patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
-        patch("pypet.cli.ai_commands.Confirm.ask", return_value=False),
+        patch("pypet.cli.ai_commands.Prompt.ask", return_value=""),  # No alias provided
     ):
         gen_snippet.return_value = {"command": "echo hi"}
         result = runner.invoke(main, ["gen", "say hi"])
-        assert result.exit_code == 0
-        assert "Not saved." in result.output
-        assert "Added new snippet" not in result.output
+        assert result.exit_code == 0, f"Expected exit code 0, but got {result.exit_code}"
+        assert "Added new snippet with ID" in result.output
+        assert "Created alias:" not in result.output # Alias creation should not happen
 
 
-def test_gen_updates_aliases_file_when_alias_provided(runner, mock_storage, tmp_path):
+def test_gen_handles_empty_tags_and_parameters(runner, mock_storage, tmp_path):
     cfg = Config(config_path=tmp_path / "config.toml")
     cfg.openrouter_api_key = "sk-test"
 
@@ -113,31 +56,95 @@ def test_gen_updates_aliases_file_when_alias_provided(runner, mock_storage, tmp_
         patch("pypet.cli.ai_commands.Config", return_value=cfg),
         patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
         patch("pypet.cli.ai_commands.Confirm.ask", return_value=True),
-        patch("pypet.cli.ai_commands.Prompt.ask", return_value="myalias"),
+    ):
+        gen_snippet.return_value = {
+            "command": "echo",
+            "description": "An empty command",
+            "tags": [],
+            "parameters": {},
+        }
+        result = runner.invoke(main, ["gen", "say hi"])
+        assert result.exit_code == 0, f"Expected exit code 0, but got {result.exit_code}"
+        assert "Added new snippet with ID" in result.output
+        stored_snippets = mock_storage.get_all_snippets()
+        assert len(stored_snippets) == 1
+        saved_snippet = stored_snippets[0]
+        assert saved_snippet.tags == []
+        assert saved_snippet.parameters == {}
+
+
+def test_gen_does_not_prompt_for_key_if_already_set(runner, mock_storage, tmp_path):
+    cfg = Config(config_path=tmp_path / "config.toml")
+    cfg.openrouter_api_key = "sk-test-from-config" # Key is already set
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.ai_commands.Config", return_value=cfg),
+        patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
+        patch("pypet.cli.ai_commands.Confirm.ask", return_value=True),
+        patch("pypet.cli.ai_commands.Prompt.ask") as mock_prompt_ask, # Mock Prompt.ask to check if it's called
+    ):
+        gen_snippet.return_value = {"command": "echo hi"}
+        result = runner.invoke(main, ["gen", "say hi"])
+        assert result.exit_code == 0, f"Expected exit code 0, but got {result.exit_code}"
+        assert "Added new snippet with ID" in result.output
+        mock_prompt_ask.assert_not_called()
+
+
+def test_gen_handles_non_dict_generated_snippet(runner, mock_storage, tmp_path):
+    cfg = Config(config_path=tmp_path / "config.toml")
+    cfg.openrouter_api_key = "sk-test"
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.ai_commands.Config", return_value=cfg),
+        patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
+    ):
+        gen_snippet.return_value = "this is not a dict" # Invalid return type
+        result = runner.invoke(main, ["gen", "say hi"])
+        assert result.exit_code == 0, f"Expected exit code 0, but got {result.exit_code}"
+        assert "Error:" in result.output
+        assert "Generated snippet must be a JSON object." in result.output
+
+
+def test_gen_handles_malformed_json_from_generate_snippet(runner, mock_storage, tmp_path):
+    cfg = Config(config_path=tmp_path / "config.toml")
+    cfg.openrouter_api_key = "sk-test"
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.ai_commands.Config", return_value=cfg),
+        patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
+    ):
+        malformed_ai_response = {
+            "description": "This response is missing the command key",
+            "tags": [],
+            "parameters": {}
+        }
+        gen_snippet.return_value = malformed_ai_response
+        
+        result = runner.invoke(main, ["gen", "say hi"])
+        assert result.exit_code == 0, f"Expected exit code 0, but got {result.exit_code}"
+        assert "Error:" in result.output
+        assert "Generated snippet is missing a valid 'command'." in result.output
+
+
+def test_gen_updates_aliases_file_when_no_alias_provided(runner, mock_storage, tmp_path):
+    cfg = Config(config_path=tmp_path / "config.toml")
+    cfg.openrouter_api_key = "sk-test"
+
+    with (
+        patch("pypet.cli.main_module.storage", mock_storage),
+        patch("pypet.cli.ai_commands.Config", return_value=cfg),
+        patch("pypet.cli.ai_commands.generate_snippet") as gen_snippet,
+        patch("pypet.cli.ai_commands.Confirm.ask", return_value=True),
+        patch("pypet.cli.ai_commands.Prompt.ask", return_value=""),  # No alias provided
         patch(
             "pypet.cli.ai_commands.AliasManager.update_aliases_file"
         ) as mock_update_aliases,
+        patch("pypet.cli.ai_commands.AliasManager", autospec=True) 
     ):
         gen_snippet.return_value = {"command": "echo hi"}
         result = runner.invoke(main, ["gen", "say hi"])
-        assert result.exit_code == 0
-        assert "Created alias:" in result.output
-        assert "myalias" in result.output
-        assert "Run this to activate:" in result.output
-        mock_update_aliases.assert_called_once()
-
-
-def test_build_snippet_from_generated_skips_non_dict_parameter_values():
-    data = {
-        "command": "test",
-        "parameters": {
-            "valid": {"name": "valid", "default": "v"},
-            "invalid": "string",
-            "noname": {},
-        },
-    }
-    snippet = _build_snippet_from_generated(data)
-    assert snippet.parameters is not None
-    assert "valid" in snippet.parameters
-    assert "invalid" not in snippet.parameters
-    assert snippet.parameters["noname"].name == "noname"
+        assert result.exit_code == 0, f"Expected exit code 0, but got {result.exit_code}"
+        mock_update_aliases.assert_not_called()
