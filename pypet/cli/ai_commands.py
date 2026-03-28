@@ -41,7 +41,19 @@ def _build_snippet_from_generated(data: dict[str, Any]) -> Snippet:
 @main.command(name="gen")
 @click.argument("prompt")
 def gen(prompt: str) -> None:
-    """Generate a snippet from a natural language prompt."""
+    """Generate a snippet from a natural language prompt.
+
+    The prompt is processed using the configured model. pypet then
+    shows the generated command, description, tags, and parameters in a review
+    table. If you confirm, it saves the snippet and can optionally create an
+    alias for it.
+
+    Examples:
+
+      pypet gen "kill process listening on port 3000"
+
+      pypet gen "docker run postgres with a volume"
+    """
     cfg = Config()
 
     api_key = cfg.resolve_openrouter_api_key()
@@ -58,6 +70,19 @@ def gen(prompt: str) -> None:
             generated = generate_snippet(prompt=prompt, config=cfg)
     except OpenRouterAIError as e:
         cli_main.console.print(f"[red]Error:[/red] {e}")
+        return
+
+    if not isinstance(generated, dict):
+        cli_main.console.print(
+            "[red]Error:[/red] Generated snippet must be a JSON object."
+        )
+        return
+
+    command = generated.get("command")
+    if not isinstance(command, str) or not command.strip():
+        cli_main.console.print(
+            "[red]Error:[/red] Generated snippet is missing a valid 'command'."
+        )
         return
 
     snippet = _build_snippet_from_generated(generated)

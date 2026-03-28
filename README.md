@@ -14,6 +14,7 @@
 - **Shell aliases** - create persistent bash/zsh aliases from snippets
 - **Git synchronization** for backup and sharing across devices
 - Parameterized snippets with default values
+- AI-assisted snippet generation
 - Automatic backup and restore functionality
 - Tag-based organization
 - Modern Python implementation with type hints
@@ -78,6 +79,9 @@ pypet copy [snippet-id]
 
 # Execute with copy to clipboard option
 pypet exec [snippet-id] --copy
+
+# Generate a snippet from a natural-language prompt
+pypet gen "kill process listening on port 3000"
 
 # Edit a snippet
 pypet edit <snippet-id>
@@ -187,6 +191,42 @@ description = "Node environment"
 name = "image"
 description = "Docker image name"
 ```
+
+### AI Snippet Generation
+
+`pypet gen` turns a natural-language prompt into a snippet draft.
+
+```bash
+# Generate a snippet from a prompt
+pypet gen "kill process listening on port 3000"
+```
+
+How it works:
+
+1. `pypet` reads `OPENROUTER_API_KEY` or `~/.config/pypet/config.toml`.
+2. If no key is available, it prompts once and saves it.
+3. It sends your prompt plus a strict JSON schema request to OpenRouter.
+4. The response is shown in a review table with `command`, `description`,
+   `tags`, and `parameters`.
+5. If you confirm, `pypet` saves the snippet and can optionally create an
+   alias.
+
+Configuration:
+
+```toml
+openrouter_api_key = "sk-..."
+ai_model = "google/gemini-2.5-flash"
+```
+
+Environment variables override the config file:
+
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL`
+
+Notes:
+
+- The generated command is never executed automatically.
+- Quote prompts with spaces, for example `pypet gen "..."`.
 
 ### Saving Snippets from Clipboard and History
 
