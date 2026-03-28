@@ -5,6 +5,7 @@ This file contains development guidelines and commands for agentic coding agents
 ## Development Commands
 
 ### Package Management
+
 ```bash
 uv pip install -e ".[dev]"    # Install dependencies using uv
 make install                  # Install package in development mode
@@ -12,6 +13,7 @@ make dev                      # Set up complete development environment with hoo
 ```
 
 ### Testing
+
 ```bash
 make test                     # Run all tests with verbose output
 make test-quick               # Quick test for CI/hooks (stop on first failure)
@@ -20,23 +22,25 @@ pytest tests/test_models.py::test_snippet_init    # Run specific test
 ```
 
 ### Code Quality
+
 ```bash
 make format                   # Auto-format and fix code with ruff
 make lint                     # Check linting with ruff
 make type-check               # Run type checking with mypy
-make all                      # Run all checks (format + lint + test)
+make all                      # Run all checks (format + lint + type-check + clean)
 ```
 
 ### Git Workflow
+
 ```bash
 make hooks                    # Install pre-push git hooks
-git push --no-verify          # Bypass hooks (use sparingly)
 SKIP_TESTS=1 git push        # Skip tests in hooks for quick iterations
 ```
 
 ## Code Style Guidelines
 
 ### Python Standards
+
 - **Python Version**: 3.10+
 - **Package Manager**: Use `uv` for all dependency management
 - **Formatter/Linter**: Ruff handles both formatting and linting
@@ -46,6 +50,7 @@ SKIP_TESTS=1 git push        # Skip tests in hooks for quick iterations
 - **Indentation**: 4 spaces per level
 
 ### Import Organization (isort)
+
 ```python
 # Standard library imports first
 import sys
@@ -63,6 +68,7 @@ from pypet.storage import Storage
 ```
 
 ### Naming Conventions
+
 - **Classes**: PascalCase (e.g., `Snippet`, `Storage`, `AliasManager`)
 - **Functions/Methods**: snake_case (e.g., `add_snippet`, `get_all_parameters`)
 - **Variables**: snake_case (e.g., `snippet_id`, `config_path`)
@@ -70,6 +76,7 @@ from pypet.storage import Storage
 - **Private Methods**: Prefix with underscore (e.g., `_load_snippets`)
 
 ### Error Handling
+
 - Use specific exception types
 - Graceful degradation for file operations
 - Log errors to stderr with context
@@ -78,6 +85,7 @@ from pypet.storage import Storage
 ## Project Structure
 
 ### Code Organization
+
 - **Models**: `pypet/models.py` - use `to_dict()` and `from_dict()` for TOML serialization
 - **Storage**: `pypet/storage.py` - handles TOML persistence
 - **CLI**: Organized into submodules under `pypet/cli/` to avoid circular imports
@@ -85,16 +93,19 @@ from pypet.storage import Storage
 - **Dataclasses**: Use `@dataclass` decorator for models with type hints
 
 ### CLI Development
+
 - **Framework**: Use Click for all command-line interfaces
 - **Output**: Use Rich for all terminal output formatting (no print statements)
 - **Command Organization**: Group related commands in separate modules
 - **Interactive Mode**: Provide interactive selection when no ID is provided
 
 ## Testing Requirements
+
 - **Location**: All tests in `tests/` directory
 - **Naming**: Use descriptive test names with docstrings
 - **Fixtures**: Use `tmp_path` fixture for file-based tests
 - **Run Specific Tests**:
+
   ```bash
   pytest tests/test_models.py                   # Single file
   pytest tests/test_models.py::test_name         # Single test
@@ -104,6 +115,7 @@ from pypet.storage import Storage
   ```
 
 ## Debugging Tips
+
 - **CLI Debugging**: Use `uv run python -m pypet.cli --help` to test CLI
 - **Import Testing**: Test imports with `uv run python -c "from pypet import ..."`
 - **Verbose Tests**: Add `-v` flag to pytest for verbose output
@@ -111,41 +123,48 @@ from pypet.storage import Storage
 ## Common Development Tasks
 
 ### Adding a New CLI Command
+
 1. Create new module in `pypet/cli/commands/`
 2. Import and register with Click group in appropriate location
 3. Use `@click.command()` decorator with type hints
 4. Add Rich console output instead of print statements
 
 ### Add a New Model
+
 1. Add dataclass to `pypet/models.py` with type hints
 2. Implement `to_dict()` and `from_dict()` for TOML serialization
 3. Add tests in `tests/test_models.py`
 4. Update Storage class if persistence needed
 
 ## Storage Guidelines
+
 - **Default Location**: `~/.config/pypet/snippets.toml`
 - **File Operations**: Use atomic operations with proper error handling
 - **Backup Management**: Automatic backup creation before destructive operations
 - **TOML Format**: Human-readable with proper section organization
 
 ## Alias Management
+
 - **Validation**: Use `AliasManager.validate_alias_name()` for shell safety
 - **Function Generation**: Create shell functions for parameterized snippets
 - **File Location**: `~/.config/pypet/aliases.sh`
 
 ## Important Notes
+
 - **No Print Statements**: Use Rich console for all output instead of print()
 - **UTC Timestamps**: All datetime operations use UTC timezone
 - **Thread Safety**: Consider thread safety for file operations
 - **Shell Integration**: Ensure shell alias functionality works across bash/zsh
 
 ## Development Workflow
+
 1. Run `make dev` to set up environment with hooks
 2. Use `make format` and `make lint` frequently during development
 3. Run `make all` before commit to ensure all checks pass
 4. Pre-push hooks automatically run quality checks
 
 ## Security Best Practices
+
 - Validate all user inputs and parameters
 - Set appropriate file permissions for configuration files
 - Sanitize command execution with proper quoting
@@ -153,8 +172,8 @@ from pypet.storage import Storage
 - Validate alias names and snippet IDs for shell safety
 
 ## Common Anti-Patterns to Avoid
+
 - Using `print()` statements - use Rich console instead
 - Bare `except:` clauses - catch specific exceptions
 - Mutable default arguments in functions
 - Using `==` for None comparisons - use `is None`
-
