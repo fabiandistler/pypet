@@ -5,6 +5,43 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-03-28
+
+### ✨ Added
+
+- **AI-assisted snippet generation** - New `pypet gen` command turns a natural
+  language prompt into a snippet draft and shows the generated command,
+  description, tags, and parameters for review before saving.
+- **Optional alias creation** - Generated snippets can be saved with an alias in
+  the same flow.
+- **OpenRouter configuration** - Added `openrouter_api_key` and `ai_model`
+  config values with `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` environment
+  overrides.
+
+### 🔧 Technical
+
+- **Zero-dependency AI client** - Added `pypet/ai.py` and CLI wiring for
+  OpenRouter chat completions using the standard library.
+- **Expanded AI test coverage** - Added coverage for config resolution, API
+  failures, malformed responses, and CLI save behavior.
+
+### 📚 Documentation
+
+- **README updates** - Documented the generation workflow and AI configuration
+  options.
+
+## [0.7.0] - 2026-03-22
+
+### ✨ Added
+
+- **Shell completion support** - Bash, Zsh, and Fish completions are now
+  available for `pypet`.
+
+### 🔄 Changed
+
+- **Simplified completion setup** - Removed the standalone setup script and
+  documented shell-native `eval`/`source` setup in the README.
+
 ## [0.6.5] - 2026-03-02
 
 ## [0.6.4] - 2026-03-02

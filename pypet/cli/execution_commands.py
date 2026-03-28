@@ -5,7 +5,7 @@ Commands for executing and copying snippets (exec, copy)
 import subprocess
 
 import click
-import pyperclip
+import pyperclip  # type: ignore
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 

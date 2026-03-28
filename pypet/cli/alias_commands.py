@@ -3,7 +3,7 @@ Commands for managing aliases
 """
 
 import click
-import pyperclip
+import pyperclip  # type: ignore
 from rich.table import Table
 
 from ..alias_manager import AliasManager

@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 import click
-import pyperclip
+import pyperclip  # type: ignore
 from rich.prompt import Confirm, Prompt
 
 from . import main_module as cli_main

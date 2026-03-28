@@ -15,6 +15,7 @@ from .main import main
 
 # Import command modules to register commands (they depend on main_module)
 from . import (  # noqa: F401
+    ai_commands,
     alias_commands,
     execution_commands,
     migration_commands,

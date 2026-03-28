@@ -41,6 +41,12 @@ if [[ "$DRY_RUN" == "true" ]]; then
     exit 0
 fi
 
+CURRENT_BRANCH=$(git branch --show-current)
+if [[ -z "$CURRENT_BRANCH" ]]; then
+    echo "Error: release requires a checked-out branch"
+    exit 1
+fi
+
 echo "=== Bumping version ==="
 uv version --bump "$BUMP_TYPE"
 NEW_VERSION=$(uv version --short)
@@ -55,10 +61,9 @@ git tag -a "v$NEW_VERSION" -m "v$NEW_VERSION"
 
 if [[ "$NO_PUSH" == "false" ]]; then
     echo "=== Pushing ==="
-    git push origin main
-    git push origin tag "v$NEW_VERSION"
+    git push origin "$CURRENT_BRANCH" "v$NEW_VERSION"
     echo "Released v$NEW_VERSION"
 else
     echo "Skipped push (--no-push flag)"
-    echo "To push manually: git push origin main && git push origin v$NEW_VERSION"
+    echo "To push manually: git push origin $CURRENT_BRANCH && git push origin v$NEW_VERSION"
 fi

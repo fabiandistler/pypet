@@ -95,3 +95,49 @@ def test_corrupted_config(tmp_path: Path) -> None:
     # Should not crash and should return defaults
     config = Config(config_path)
     assert config.auto_sync is False
+
+
+def test_resolve_openrouter_api_key_env_precedence(tmp_path: Path, monkeypatch) -> None:
+    """ENV should override config when non-empty."""
+
+    config_path = tmp_path / "config.toml"
+    config = Config(config_path)
+    config.openrouter_api_key = "config-key"
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "env-key")
+    assert config.resolve_openrouter_api_key() == "env-key"
+
+
+def test_resolve_openrouter_api_key_empty_env_falls_back(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Empty ENV should be treated as unset and fall back to config."""
+
+    config_path = tmp_path / "config.toml"
+    config = Config(config_path)
+    config.openrouter_api_key = "config-key"
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "")
+    assert config.resolve_openrouter_api_key() == "config-key"
+
+
+def test_resolve_ai_model_env_precedence(tmp_path: Path, monkeypatch) -> None:
+    """ENV should override config when non-empty."""
+
+    config_path = tmp_path / "config.toml"
+    config = Config(config_path)
+    config.ai_model = "config-model"
+
+    monkeypatch.setenv("OPENROUTER_MODEL", "env-model")
+    assert config.resolve_ai_model() == "env-model"
+
+
+def test_resolve_ai_model_empty_env_falls_back(tmp_path: Path, monkeypatch) -> None:
+    """Empty ENV should be treated as unset and fall back to config."""
+
+    config_path = tmp_path / "config.toml"
+    config = Config(config_path)
+    config.ai_model = "config-model"
+
+    monkeypatch.setenv("OPENROUTER_MODEL", "")
+    assert config.resolve_ai_model() == "config-model"
