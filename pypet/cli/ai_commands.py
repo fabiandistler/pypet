@@ -75,8 +75,8 @@ def gen(prompt: str) -> None:
         cli_main.console.print("[yellow]Not saved.[/yellow]")
         return
 
-    alias = Prompt.ask("Optional alias (press enter to skip)", default="")
-    alias = alias.strip() or None
+    alias_input = Prompt.ask("Optional alias (press enter to skip)", default="")
+    alias = alias_input.strip() or None
 
     snippet_id = cli_main.storage.add_snippet(
         command=snippet.command,
