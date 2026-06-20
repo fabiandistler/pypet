@@ -15,6 +15,7 @@
 - **Git synchronization** for backup and sharing across devices
 - Parameterized snippets with default values
 - AI-assisted snippet generation
+- **MCP server** - expose snippets to AI agents (Claude Code, Codex, Cursor) via `pypet mcp`
 - Automatic backup and restore functionality
 - Tag-based organization
 - Modern Python implementation with type hints
@@ -227,6 +228,40 @@ Notes:
 
 - The generated command is never executed automatically.
 - Quote prompts with spaces, for example `pypet gen "..."`.
+
+### MCP Server (AI Agent Integration)
+
+`pypet mcp` runs pypet as a [Model Context Protocol](https://modelcontextprotocol.io)
+server over stdio, so AI coding agents (Claude Code, Codex, Cursor, ...) can use your
+curated snippet library as trusted, known-good commands - and contribute new ones back.
+
+Install the optional extra and register the server with your agent:
+
+```bash
+# Install with the MCP server extra
+pip install "pypet-cli[mcp]"
+
+# Register with Claude Code
+claude mcp add pypet -- pypet mcp
+```
+
+For other MCP clients, configure a stdio server that runs `pypet mcp`.
+
+The server exposes four tools, all thin wrappers over your existing snippet store:
+
+- `search_snippets(query)` - find snippets by command, description, tags, or parameters
+- `get_snippet(id)` - fetch a single snippet
+- `list_snippets()` - list every snippet
+- `save_snippet(command, description?, tags?, parameters?)` - save a new snippet
+
+**Read and save only:** the server never executes commands. Agents run commands with
+their own tools and approval prompts.
+
+**Trust signal:** every result carries `reviewed` and `source` fields. Snippets you
+created read back as `source: "user"` / `reviewed: true`. Snippets an agent saves are
+tagged (default `agent`, configurable via `agent_snippet_tag`) and read back as
+`source: "agent"` / `reviewed: false` until you vet them - so an agent is never served
+an unreviewed command as if you had approved it.
 
 ### Saving Snippets from Clipboard and History
 

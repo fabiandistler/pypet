@@ -18,6 +18,7 @@ from . import (  # noqa: F401
     ai_commands,
     alias_commands,
     execution_commands,
+    mcp_commands,
     migration_commands,
     save_commands,
     snippet_commands,

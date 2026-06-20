@@ -5,6 +5,28 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### ✨ Added
+
+- **MCP server for AI agents** - New `pypet mcp` command runs pypet as a Model
+  Context Protocol (stdio) server, exposing `search_snippets`, `get_snippet`,
+  `list_snippets`, and `save_snippet` tools to MCP-capable agents (Claude Code,
+  Codex, Cursor). Snippets become a shared library of trusted commands that
+  agents can read and contribute to.
+- **Trust annotation** - MCP read results include `reviewed` and `source` fields
+  so agents can distinguish human-vetted snippets from agent-saved ones.
+  Agent-saved snippets are marked with a configurable tag (`agent_snippet_tag`,
+  default `agent`).
+
+### 🔧 Technical
+
+- **Optional `mcp` extra** - The MCP SDK ships behind `pypet-cli[mcp]`, keeping
+  the core install lean. The server reuses the existing `Storage` layer and is
+  careful to keep the stdio JSON-RPC stream on stdout with diagnostics on stderr.
+- **MCP test coverage** - Added unit tests for the tool adapters, trust
+  annotation, the optional-dependency launcher, and an end-to-end dispatch test.
+
 ## [0.8.0] - 2026-03-28
 
 ### ✨ Added

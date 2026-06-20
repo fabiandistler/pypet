@@ -40,6 +40,9 @@ Repository = "https://github.com/fabiandistler/pypet.git"
 Issues = "https://github.com/fabiandistler/pypet/issues"
 Changelog = "https://github.com/fabiandistler/pypet/blob/main/CHANGELOG.md"
 
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
