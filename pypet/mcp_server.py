@@ -70,6 +70,9 @@ def save_snippet_impl(
     parameters: dict[str, str] | None,
     agent_tag: str,
 ) -> dict[str, Any]:
+    if not command or not command.strip():
+        raise ValueError("save_snippet requires a non-empty command")
+
     final_tags = list(tags or [])
     if agent_tag and agent_tag not in final_tags:
         final_tags.append(agent_tag)
@@ -88,7 +91,8 @@ def save_snippet_impl(
         parameters=parameter_objects,
     )
     snippet = storage.get_snippet(snippet_id)
-    assert snippet is not None
+    if snippet is None:
+        raise RuntimeError(f"Snippet {snippet_id} disappeared immediately after saving")
     return _snippet_payload(snippet_id, snippet, agent_tag)
 
 

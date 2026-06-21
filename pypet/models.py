@@ -189,6 +189,21 @@ class Snippet:
                             default=metadata.default,
                             description=metadata.description,
                         )
+                    else:
+                        existing = all_params[name]
+                        all_params[name] = Parameter(
+                            name=name,
+                            default=(
+                                existing.default
+                                if existing.default is not None
+                                else metadata.default
+                            ),
+                            description=(
+                                existing.description
+                                if existing.description is not None
+                                else metadata.description
+                            ),
+                        )
                 return all_params
             except ValueError:
                 pass

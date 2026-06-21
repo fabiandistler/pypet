@@ -261,7 +261,9 @@ their own tools and approval prompts.
 created read back as `source: "user"` / `reviewed: true`. Snippets an agent saves are
 tagged (default `agent`, configurable via `agent_snippet_tag`) and read back as
 `source: "agent"` / `reviewed: false` until you vet them - so an agent is never served
-an unreviewed command as if you had approved it.
+an unreviewed command as if you had approved it. The flag only *labels* trust (pypet
+never executes commands itself); it protects you insofar as the consuming agent honors
+it.
 
 ### Saving Snippets from Clipboard and History
 
