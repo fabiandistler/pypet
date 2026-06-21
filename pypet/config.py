@@ -17,6 +17,7 @@ DEFAULT_SETTINGS = {
     # OpenRouter AI snippet generation
     "openrouter_api_key": "",
     "ai_model": "google/gemini-2.5-flash",
+    "agent_snippet_tag": "agent",
 }
 
 
@@ -87,6 +88,18 @@ class Config:
     def ai_model(self, value: str) -> None:
         """Set the AI model to use for snippet generation."""
         self.set("ai_model", value)
+
+    @property
+    def agent_snippet_tag(self) -> str:
+        """Get the tag applied to snippets saved by AI agents via MCP."""
+        return str(
+            self.get("agent_snippet_tag", DEFAULT_SETTINGS["agent_snippet_tag"]) or ""
+        )
+
+    @agent_snippet_tag.setter
+    def agent_snippet_tag(self, value: str) -> None:
+        """Set the tag applied to snippets saved by AI agents via MCP."""
+        self.set("agent_snippet_tag", value)
 
     def resolve_openrouter_api_key(self) -> str:
         """Resolve API key with ENV taking precedence.

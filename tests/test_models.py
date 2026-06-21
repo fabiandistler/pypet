@@ -277,6 +277,18 @@ def test_get_all_parameters_mixed():
     assert all_params["port"].description is None
 
 
+def test_get_all_parameters_merges_inline_default_into_described_param():
+    """A described-only formal param keeps the command's inline default (new syntax)."""
+    params = {"port": Parameter("port", description="SSH port")}
+    snippet = Snippet(command="ssh {{host}} -p {{port=22}}", parameters=params)
+
+    all_params = snippet.get_all_parameters()
+
+    assert all_params["port"].default == "22"
+    assert all_params["port"].description == "SSH port"
+    assert "host" in all_params
+
+
 def test_apply_parameters_no_params():
     """Test apply_parameters on snippet without parameters"""
     snippet = Snippet(command="docker ps")

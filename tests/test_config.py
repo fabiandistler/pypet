@@ -54,6 +54,20 @@ def test_auto_sync_property(tmp_path: Path) -> None:
     assert config.auto_sync is False
 
 
+def test_agent_snippet_tag_property(tmp_path: Path) -> None:
+    """Test agent_snippet_tag default, setter, and persistence."""
+    config_path = tmp_path / "config.toml"
+    config = Config(config_path)
+
+    assert config.agent_snippet_tag == "agent"
+
+    config.agent_snippet_tag = "bot"
+    assert config.agent_snippet_tag == "bot"
+
+    config2 = Config(config_path)
+    assert config2.agent_snippet_tag == "bot"
+
+
 def test_get_all(tmp_path: Path) -> None:
     """Test getting all config values."""
     config_path = tmp_path / "config.toml"
