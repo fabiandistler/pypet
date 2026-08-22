@@ -2,6 +2,12 @@
 
 # pypet - Command Line Snippet Manager
 
+> [!WARNING]
+> **pypet is archived and unmaintained as of August 2026.** It will receive no
+> further releases or support. See [Atuin](https://github.com/atuinsh/atuin)
+> (agent-era command management with built-in MCP), [pet](https://github.com/knqyf263/pet),
+> or [navi](https://github.com/denisidoro/navi) as alternatives.
+
 `pypet` is a Python-based command-line snippet manager inspired by [pet](https://github.com/knqyf263/pet). It helps you organize and reuse command-line snippets efficiently, with a focus on simplicity and usability.
 
 ## Features

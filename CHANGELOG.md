@@ -5,6 +5,15 @@ All notable changes to pypet will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-08-22
+
+### 📚 Documentation
+
+- **Project archived** - pypet is unmaintained as of August 2026; this is its
+  final release. The README carries an archive banner with suggested
+  alternatives (Atuin, pet, navi). Recorded in
+  [ADR 0001](docs/adr/0001-archive-pypet-gracefully.md).
+
 ## [0.8.0] - 2026-03-28
 
 ### ✨ Added
