@@ -82,14 +82,17 @@ def test_generate_snippet_rejects_missing_command(tmp_path):
             generate_snippet("prompt", config=cfg)
 
 
-def test_generate_snippet_missing_api_key(tmp_path):
+def test_generate_snippet_missing_api_key(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     cfg = Config(config_path=tmp_path / "config.toml")
     cfg.openrouter_api_key = ""
     with pytest.raises(OpenRouterAIError, match="Missing OpenRouter API key"):
         generate_snippet("prompt", config=cfg)
 
 
-def test_generate_snippet_missing_model(tmp_path):
+def test_generate_snippet_missing_model(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("OPENROUTER_MODEL", raising=False)
     cfg = Config(config_path=tmp_path / "config.toml")
     cfg.openrouter_api_key = "sk-test"
     cfg.ai_model = ""
